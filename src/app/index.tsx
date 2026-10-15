@@ -263,12 +263,12 @@ const cargarFerias = async () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.tituloApp}>¡Esto es de una feria!</Text>
+          <View style={styles.headerTitulo}>
+            <Text style={styles.tituloApp}>¡ESTO ES DE UNA FERIA!</Text>
             <Text style={styles.subtitulo}>Encontrá ferias americanas cerca tuyo</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.botonFiltroToggle, totalFiltrosActivos > 0 && styles.botonFiltroActivo]}
+            style={[styles.botonFiltroToggle, styles.botonFiltroHeader, totalFiltrosActivos > 0 && styles.botonFiltroActivo]}
             onPress={() => setMostrarFiltros(!mostrarFiltros)}
           >
             <Text style={[styles.textoBotonFiltro, totalFiltrosActivos > 0 && styles.textoBotonFiltroActivo]}>
@@ -526,15 +526,18 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEEEEE',
   },
   headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'stretch',
     marginBottom: 12,
   },
+  headerTitulo: {
+    alignItems: 'center',
+  },
   tituloApp: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#2C3E50',
+    textAlign: 'center',
   },
   subtitulo: {
     fontSize: 12,
@@ -546,6 +549,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#EDF2F7',
+  },
+  botonFiltroHeader: {
+    alignSelf: 'flex-end',
+    marginTop: 10,
   },
   botonFiltroActivo: {
     backgroundColor: '#3182CE',
