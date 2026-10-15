@@ -7,3 +7,31 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+#feria-masonry {
+  display: block;
+  column-count: 1;
+  column-gap: 16px;
+}
+
+#feria-masonry > * {
+  break-inside: avoid;
+}
+
+@media (min-width: 560px) {
+  #feria-masonry {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 900px) {
+  #feria-masonry {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1280px) {
+  #feria-masonry {
+    column-count: 4;
+  }
+}

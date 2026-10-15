@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  FlatList, 
-  TouchableOpacity, 
-  Image, 
-  ScrollView, 
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
   Platform,
-  ActivityIndicator
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
-import { useRouter } from 'expo-router';
 import { supabase } from '../supabase';
 
 export type Feria = {
@@ -192,6 +192,71 @@ const cargarFerias = async () => {
       </body>
     </html>
   `;
+
+  const renderCard = (item: Feria) => (
+    <TouchableOpacity
+      key={item.id}
+      style={styles.cardFeria}
+      onPress={() => irADetalle(item)}
+    >
+      {item.foto_perfil ? (
+        <Image source={{ uri: item.foto_perfil }} style={styles.imagenPortada} />
+      ) : (
+        <View style={[styles.imagenPortada, styles.imagenPlaceholder]}>
+          <Text style={{ color: '#A0AEC0' }}>Sin imagen</Text>
+        </View>
+      )}
+
+      <View style={styles.cardContenido}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.nombreFeria}>{item.nombre}</Text>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            {item.compra_ropa && (
+              <View style={styles.badgeCompraRopa}>
+                <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
+              </View>
+            )}
+            {item.modalidad && item.modalidad.length > 0 && (
+              <View style={styles.badgeModalidad}>
+                <Text style={styles.badgeModalidadText}>{item.modalidad.join(' / ')}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <Text style={styles.infoText}>📍 {item.direccion} ({item.barrio})</Text>
+        <Text style={styles.infoText}>
+          🗓️ {(item.dias_semana || []).join(', ')} • 🕒 {item.horario}
+        </Text>
+        {item.precio && item.precio.length > 0 && (
+          <Text style={styles.infoText}>🏷️ Precios: {item.precio.join(', ')}</Text>
+        )}
+
+        <View style={styles.tagsContainer}>
+          {(item.tipo || []).map((tipo, index) => (
+            <View key={`${tipo}-${index}`} style={styles.tag}><Text style={styles.tagText}>{tipo}</Text></View>
+          ))}
+          {(item.genero || []).map((genero, index) => (
+            <View key={`${genero}-${index}`} style={styles.tag}><Text style={styles.tagText}>{genero}</Text></View>
+          ))}
+        </View>
+
+        <View style={styles.contactoContainer}>
+          {item.instagram && <Text style={styles.contactoText}>📸 {item.instagram}</Text>}
+          {item.whatsapp && <Text style={styles.contactoText}>💬 {item.whatsapp}</Text>}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const emptyList = (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyTexto}>No encontramos ferias que coincidan con esos filtros.</Text>
+      <TouchableOpacity style={styles.botonLimpiarEmpty} onPress={limpiarFiltros}>
+        <Text style={styles.textoLimpiarEmpty}>Limpiar filtros</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -410,74 +475,27 @@ const cargarFerias = async () => {
           <Text style={styles.loadingTexto}>Cargando ferias desde la nube...</Text>
         </View>
       ) : vistaActual === 'lista' ? (
-        <FlatList
-          data={feriasFiltradas}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listaContainer}
-          onRefresh={cargarFerias}
-          refreshing={loading}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyTexto}>No encontramos ferias que coincidan con esos filtros.</Text>
-              <TouchableOpacity style={styles.botonLimpiarEmpty} onPress={limpiarFiltros}>
-                <Text style={styles.textoLimpiarEmpty}>Limpiar filtros</Text>
-              </TouchableOpacity>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.cardFeria} onPress={() => irADetalle(item)}>
-              {item.foto_perfil ? (
-                <Image source={{ uri: item.foto_perfil }} style={styles.imagenPortada} />
-              ) : (
-                <View style={[styles.imagenPortada, styles.imagenPlaceholder]}>
-                  <Text style={{ color: '#A0AEC0' }}>Sin imagen</Text>
-                </View>
-              )}
-
-              <View style={styles.cardContenido}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.nombreFeria}>{item.nombre}</Text>
-                  <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-                    {item.compra_ropa && (
-                      <View style={styles.badgeCompraRopa}>
-                        <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
-                      </View>
-                    )}
-                    {item.modalidad && item.modalidad.length > 0 && (
-                      <View style={styles.badgeModalidad}>
-                        <Text style={styles.badgeModalidadText}>
-                          {item.modalidad.join(' / ')}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                <Text style={styles.infoText}>📍 {item.direccion} ({item.barrio})</Text>
-                <Text style={styles.infoText}>
-                  🗓️ {(item.dias_semana || []).join(', ')} • 🕒 {item.horario}
-                </Text>
-                {item.precio && item.precio.length > 0 && (
-                  <Text style={styles.infoText}>🏷️ Precios: {item.precio.join(', ')}</Text>
-                )}
-
-                <View style={styles.tagsContainer}>
-                  {(item.tipo || []).map((t, idx) => (
-                    <View key={idx} style={styles.tag}><Text style={styles.tagText}>{t}</Text></View>
-                  ))}
-                  {(item.genero || []).map((g, idx) => (
-                    <View key={idx} style={styles.tag}><Text style={styles.tagText}>{g}</Text></View>
-                  ))}
-                </View>
-
-                <View style={styles.contactoContainer}>
-                  {item.instagram && <Text style={styles.contactoText}>📸 {item.instagram}</Text>}
-                  {item.whatsapp && <Text style={styles.contactoText}>💬 {item.whatsapp}</Text>}
-                </View>
+        Platform.OS === 'web' ? (
+          <ScrollView contentContainerStyle={styles.listaContainer}>
+            {feriasFiltradas.length === 0 ? (
+              emptyList
+            ) : (
+              <View style={styles.listaWeb} nativeID="feria-masonry">
+                {feriasFiltradas.map(renderCard)}
               </View>
-            </TouchableOpacity>
-          )}
-        />
+            )}
+          </ScrollView>
+        ) : (
+          <FlatList
+            data={feriasFiltradas}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listaContainer}
+            onRefresh={cargarFerias}
+            refreshing={loading}
+            ListEmptyComponent={emptyList}
+            renderItem={({ item }) => renderCard(item)}
+          />
+        )
       ) : Platform.OS === 'web' ? (
         <iframe
           srcDoc={mapHtml}
@@ -631,6 +649,9 @@ const styles = StyleSheet.create({
   },
   listaContainer: {
     padding: 16,
+  },
+  listaWeb: {
+    width: '100%',
   },
   cardFeria: {
     backgroundColor: '#FFFFFF',
