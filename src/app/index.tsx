@@ -517,7 +517,7 @@ const cargarFerias = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
+    backgroundColor: '#F5F5F7',
   },
   header: {
     padding: 16,
@@ -664,13 +664,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    overflow: 'hidden',
+    // Sombra sutil multiplataforma (iOS, Android y web) para despegar la card del fondo
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
   },
   imagenPortada: {
     width: '100%',
     height: 160,
+    // Redondeamos solo la imagen (en vez de overflow: 'hidden' en la card) para no recortar la sombra
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   imagenPlaceholder: {
     backgroundColor: '#EDF2F7',
