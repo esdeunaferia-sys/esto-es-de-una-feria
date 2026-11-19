@@ -1,0 +1,24 @@
+// Forma de una fila de la tabla `ferias` de Supabase.
+// Vive en su propio archivo porque la usan varias pantallas (home y ficha).
+export type Feria = {
+  id: string;
+  slug: string; // nombre corto para el link: /feria/<slug>
+  nombre: string;
+  foto_perfil: string | null;
+  fotos: string[] | null;
+  barrio: string;
+  direccion: string;
+  dias_semana: string[] | null;
+  horario: string;
+  observaciones_dias: string | null;
+  modalidad: string[] | null;
+  precio: string[] | null;
+  genero: string[] | null;
+  tipo: string[] | null;
+  instagram: string | null;
+  whatsapp: string | null;
+  lat: number | null;
+  lng: number | null;
+  compra_ropa: boolean | null;
+  orden: number | null;
+};

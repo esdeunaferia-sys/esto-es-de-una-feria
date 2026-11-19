@@ -39,15 +39,16 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/supabase.ts`: cliente de Supabase (con adaptador de AsyncStorage seguro para el render estático).
 - `src/global.css`: fuentes y la grilla tipo Pinterest de la web (`#feria-masonry`).
 - `src/app/_layout.tsx`: layout raíz (Stack sin header, tema claro/oscuro, splash, Firebase).
-- `src/app/index.tsx`: **home** (~780 líneas): carga de ferias, filtros, lista/grilla y mapa. Acá también está definido el tipo `Feria`.
-- `src/app/detalle.tsx`: ficha de una feria. Hoy recibe **todos los datos por parámetros de la URL** (se reemplazará por `/feria/[slug]`).
+- `src/app/index.tsx`: **home** (~760 líneas): carga de ferias, filtros, lista/grilla y mapa.
+- `src/app/feria/[slug].tsx`: ficha de una feria (`/feria/<slug>`). Busca la feria en Supabase por `slug` (solo `activa = true`). `generateStaticParams` pide los slugs en el build y genera un HTML por feria.
+- `src/types/feria.ts`: tipo `Feria` (forma de una fila de la tabla).
 - Restos del template de Expo sin uso: `src/app/explore.tsx`, `src/components/app-tabs*`, `web-badge`, `hint-row`, `ui/collapsible`, `scripts/reset-project.js`, `README.md` genérico.
 
 ---
 
 ## 4. Datos (Supabase)
 - Tabla **`ferias`**. La home trae `select('*')` filtrando `activa = true`, ordenando por `orden` (ascendente, orden manual 1, 2, 3…) y después por `created_at` (descendente).
-- Campos que usa la app: `id`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `modalidad[]`, `precio[]`, `genero[]`, `tipo[]`, `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean), `orden`, `activa`, `created_at`.
+- Campos que usa la app: `id`, `slug`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `modalidad[]`, `precio[]`, `genero[]`, `tipo[]`, `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean), `orden`, `activa`, `created_at`.
 - Valores fijos en los filtros: precios `$`…`$$$$$`; días en minúscula y **sin tilde** (`miercoles`, `sabado`); modalidades `Fija / Local`, `Showroom fijo`, `Itinerante`. Barrios, tipos y géneros salen de los datos.
 
 ---
@@ -84,16 +85,19 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 **Hecho**
 - Firebase Analytics en producción (solo MAU).
 - Ajuste visual de la home: fondo `#F5F5F7` y cards blancas con radio 12 y sombra sutil.
+- Seguridad en Supabase (RLS), verificada el 2026-11-19: la tabla `ferias` tiene RLS activado y una sola política, "Permitir lectura publica de ferias activas" (`SELECT` para `public` con `activa = true`). No hay políticas de escritura, así que `anon`/`authenticated` no pueden crear, modificar ni borrar.
 
-**Próximo (en este orden)**
-1. **Seguridad en Supabase (RLS):** verificar que la tabla `ferias` tenga RLS activado, con lectura pública (`SELECT` para `anon`, idealmente solo `activa = true`) y sin permisos de escritura para `anon`/`authenticated`.
-2. **Rutas de detalle `/feria/[slug]`:** página por feria que carga sus datos por slug desde Supabase (agregar columna `slug` única). Reemplaza a `detalle.tsx` con parámetros en la URL. Objetivo: links cortos para compartir y SEO (idealmente pre-generando una página estática por feria en el build).
+- Rutas de detalle `/feria/[slug]` (2026-11-19): columna `slug` en Supabase (obligatoria, única y con formato `minusculas-con-guiones`, chequeado por la base). Una página estática por feria generada en el build. Se borró `detalle.tsx`. Se agregó `vercel.json` con `cleanUrls: true` (sin eso Vercel solo servía `/feria/x.html` y `/feria/x` daba 404 al abrir un link directo). En la ficha, `compra_ropa = null` ya no se muestra.
+
+**Próximo**
+1. **Ferias nuevas → nuevo deploy:** las páginas de feria solo existen para los slugs que había al momento del build. Al cargar una feria nueva hay que redesplegar (configurar un *deploy hook* de Vercel para hacerlo sin tocar código). Al cargar una feria a mano, completar `slug`.
+2. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
 
 **Pendientes detectados (sin prioridad todavía)**
-- Separar `index.tsx`: componente reutilizable de chips de filtro (hoy está copiado 6 veces), tipo `Feria` en un archivo propio, carga de datos en un hook.
+- Lint: corregir los 2 errores existentes (`cargarFerias` usada antes de declararse en `index.tsx` y `setState` en efecto en `src/hooks/use-color-scheme.web.ts`) y commitear la config de ESLint (`eslint.config.js` + cambios en `package.json`).
+- Separar `index.tsx`: componente reutilizable de chips de filtro (hoy está copiado 6 veces), carga de datos en un hook.
 - Mapa: escapar los textos que se insertan en el HTML y hacer que el popup lleve a la ficha de la feria.
 - Usar `expo-image` en vez de `Image` de React Native (mejor caché y rendimiento).
-- En la ficha, `compra_ropa = null` hoy se muestra como "No compra ropa".
 - Limpiar restos del template y personalizar nombre, ícono y splash en `app.json`.
 
 ---

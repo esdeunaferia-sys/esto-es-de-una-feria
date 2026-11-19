@@ -14,28 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { supabase } from '../supabase';
-
-export type Feria = {
-  id: string;
-  nombre: string;
-  foto_perfil: string | null;
-  fotos: string[] | null;
-  barrio: string;
-  direccion: string;
-  dias_semana: string[] | null;
-  horario: string;
-  observaciones_dias: string | null;
-  modalidad: string[] | null;
-  precio: string[] | null;
-  genero: string[] | null;
-  tipo: string[] | null;
-  instagram: string | null;
-  whatsapp: string | null;
-  lat: number | null;
-  lng: number | null;
-  compra_ropa: boolean | null;
-  orden: number | null; // <-- Nueva propiedad
-};
+import type { Feria } from '@/types/feria';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -135,25 +114,10 @@ const cargarFerias = async () => {
   };
 
   const irADetalle = (feria: Feria) => {
+    // Solo pasamos el slug: la ficha busca el resto de los datos en Supabase
     router.push({
-      pathname: '/detalle',
-      params: {
-        id: feria.id,
-        nombre: feria.nombre,
-        fotoPerfil: feria.foto_perfil || '',
-        fotos: JSON.stringify(feria.fotos || []),
-        barrio: feria.barrio || '',
-        direccion: feria.direccion || '',
-        dias: (feria.dias_semana || []).join(', '),
-        horario: feria.horario || '',
-        modalidad: (feria.modalidad || []).join(', '),
-        precio: (feria.precio || []).join(', '),
-        genero: (feria.genero || []).join(', '),
-        tipo: (feria.tipo || []).join(', '),
-        instagram: feria.instagram || '',
-        whatsapp: feria.whatsapp || '',
-        compraRopa: feria.compra_ropa ? 'Sí' : 'No',
-      },
+      pathname: '/feria/[slug]',
+      params: { slug: feria.slug },
     });
   };
 
