@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
+// No hay nada a qué "suscribirse": solo queremos saber si estamos en el servidor o en el navegador.
+const noSuscribir = () => () => {};
+
 /**
- * To support static rendering, this value needs to be re-calculated on the client side for web
+ * En el build estático no se conoce el tema del usuario, así que el HTML se arma en claro.
+ * En el navegador se usa el tema real. useSyncExternalStore devuelve `false` en el build
+ * (y en la primera pasada del navegador, para que coincida con el HTML) y `true` después.
  */
 export function useColorScheme() {
-  const [hasHydrated, setHasHydrated] = useState(false);
-
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
+  const estaEnNavegador = useSyncExternalStore(
+    noSuscribir,
+    () => true,
+    () => false,
+  );
 
   const colorScheme = useRNColorScheme();
 
-  if (hasHydrated) {
+  if (estaEnNavegador) {
     return colorScheme;
   }
 

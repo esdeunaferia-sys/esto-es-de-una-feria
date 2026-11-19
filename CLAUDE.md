@@ -89,12 +89,13 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 
 - Rutas de detalle `/feria/[slug]` (2026-11-19): columna `slug` en Supabase (obligatoria, única y con formato `minusculas-con-guiones`, chequeado por la base). Una página estática por feria generada en el build. Se borró `detalle.tsx`. Se agregó `vercel.json` con `cleanUrls: true` (sin eso Vercel solo servía `/feria/x.html` y `/feria/x` daba 404 al abrir un link directo). En la ficha, `compra_ropa = null` ya no se muestra.
 
+- Redeploy automático (2026-11-19): las páginas de feria solo existen para los slugs que había al momento del build. Por eso hay un *Database Webhook* en Supabase (`rearmar_sitio_vercel`, tabla `ferias`, Insert/Update/Delete, POST) que llama a un *Deploy Hook* de Vercel (`supabase-ferias`, rama `main`). Cualquier cambio en la tabla rearma el sitio en ~2 minutos. La URL del hook es secreta: vive solo en Supabase, nunca en el repo. Al cargar una feria a mano, completar `slug`.
+- ESLint configurado (`eslint.config.js`, `eslint-config-expo`) y sin errores (2026-11-19). Ojo con la regla `react-hooks/set-state-in-effect`: dentro de un `useEffect` no llamar funciones que cambian el estado antes de un `await`. Patrón usado: una función que solo trae datos (`pedirFerias()` en `index.tsx`) y el `setState` dentro del `.then(...)`.
+
 **Próximo**
-1. **Ferias nuevas → nuevo deploy:** las páginas de feria solo existen para los slugs que había al momento del build. Al cargar una feria nueva hay que redesplegar (configurar un *deploy hook* de Vercel para hacerlo sin tocar código). Al cargar una feria a mano, completar `slug`.
-2. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
+1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
 
 **Pendientes detectados (sin prioridad todavía)**
-- Lint: corregir los 2 errores existentes (`cargarFerias` usada antes de declararse en `index.tsx` y `setState` en efecto en `src/hooks/use-color-scheme.web.ts`) y commitear la config de ESLint (`eslint.config.js` + cambios en `package.json`).
 - Separar `index.tsx`: componente reutilizable de chips de filtro (hoy está copiado 6 veces), carga de datos en un hook.
 - Mapa: escapar los textos que se insertan en el HTML y hacer que el popup lleve a la ficha de la feria.
 - Usar `expo-image` en vez de `Image` de React Native (mejor caché y rendimiento).

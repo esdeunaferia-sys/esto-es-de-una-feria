@@ -16,6 +16,28 @@ import { WebView } from 'react-native-webview';
 import { supabase } from '../supabase';
 import type { Feria } from '@/types/feria';
 
+// Pide las ferias activas a Supabase. Solo trae los datos (no toca el estado
+// de la pantalla): devuelve la lista, o null si algo falló.
+async function pedirFerias(): Promise<Feria[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('ferias')
+      .select('*')
+      .eq('activa', true)
+      .order('orden', { ascending: true }) // <-- Ordena por tu número personalizado (1, 2, 3...)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error al cargar ferias:', error.message);
+      return null;
+    }
+    return (data ?? []) as Feria[];
+  } catch (err) {
+    console.error('Error de conexión:', err);
+    return null;
+  }
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const [ferias, setFerias] = useState<Feria[]>([]);
@@ -32,32 +54,22 @@ export default function HomeScreen() {
   const [modalidadFiltro, setModalidadFiltro] = useState<string>('');
   const [compraRopaFiltro, setCompraRopaFiltro] = useState<boolean | null>(null);
 
-  // Cargar ferias desde Supabase
+  // Al abrir la home: `loading` ya arranca en true, y cuando llega la respuesta
+  // guardamos las ferias y apagamos la ruedita.
   useEffect(() => {
-    cargarFerias();
+    pedirFerias().then((lista) => {
+      if (lista) setFerias(lista);
+      setLoading(false);
+    });
   }, []);
 
-const cargarFerias = async () => {
-  setLoading(true);
-  try {
-    const { data, error } = await supabase
-      .from('ferias')
-      .select('*')
-      .eq('activa', true)
-      .order('orden', { ascending: true }) // <-- Ordena por tu número personalizado (1, 2, 3...)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error al cargar ferias:', error.message);
-    } else if (data) {
-      setFerias(data as Feria[]);
-    }
-  } catch (err) {
-    console.error('Error de conexión:', err);
-  } finally {
+  // Deslizar hacia abajo para refrescar (solo en el celu)
+  const refrescarFerias = async () => {
+    setLoading(true);
+    const lista = await pedirFerias();
+    if (lista) setFerias(lista); // si falló, dejamos las que ya estaban
     setLoading(false);
-  }
-};
+  };
 
   // Opciones únicas para filtros
   const opcionesBarrios = useMemo(() => {
@@ -454,7 +466,7 @@ const cargarFerias = async () => {
             data={feriasFiltradas}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listaContainer}
-            onRefresh={cargarFerias}
+            onRefresh={refrescarFerias}
             refreshing={loading}
             ListEmptyComponent={emptyList}
             renderItem={({ item }) => renderCard(item)}
