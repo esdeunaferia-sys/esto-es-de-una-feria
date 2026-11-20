@@ -228,9 +228,7 @@ export default function HomeScreen() {
       <body>
         <div id="map"></div>
         <script>
-          var defaultLat = ${feriasConCoordenadas[0]?.lat ?? -34.6037};
-          var defaultLng = ${feriasConCoordenadas[0]?.lng ?? -58.3816};
-          var map = L.map('map').setView([defaultLat, defaultLng], 12);
+          var map = L.map('map');
 
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
@@ -256,7 +254,9 @@ export default function HomeScreen() {
           }
 
           var ferias = ${datosMapaJson};
+          var puntos = []; // posición de cada pin, para encuadrar el mapa al final
           ferias.forEach(function(f) {
+            puntos.push([f.lat, f.lng]);
             var globito = document.createElement('div');
 
             // La foto se baja recién cuando se abre el globito (ver 'popupopen' más abajo)
@@ -282,6 +282,16 @@ export default function HomeScreen() {
               if (foto && !foto.getAttribute('src')) foto.src = f.foto;
             });
           });
+
+          // Encuadre: el mapa se acomoda para que se vean todos los pines (con un margen).
+          // Como el mapa se rearma al cambiar los filtros, siempre muestra las que quedaron.
+          if (puntos.length > 1) {
+            map.fitBounds(puntos, { padding: [40, 40], maxZoom: 15 });
+          } else if (puntos.length === 1) {
+            map.setView(puntos[0], 15); // una sola feria: zoom de barrio
+          } else {
+            map.setView([-34.6037, -58.3816], 12); // ninguna: centro de Buenos Aires
+          }
         </script>
       </body>
     </html>

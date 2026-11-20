@@ -28,6 +28,7 @@
   - Inicializado en `/firebaseConfig.js` validando `isSupported()` antes de `getAnalytics(app)`.
   - Importado globalmente en `src/app/_layout.tsx`.
 - **Mapa:** Leaflet + OpenStreetMap, armado como un HTML en texto dentro de `index.tsx` y mostrado con `<iframe>` en web y `react-native-webview` en el celu.. (`react-native-maps` se desinstaló porque no se usaba).
+  - Encuadre automático: `fitBounds` con todos los pines (margen 40px, zoom máx. 15). Con una sola feria, zoom 15 sobre ella; sin ninguna, centro de Buenos Aires con zoom 12. Como el HTML del mapa se rearma al cambiar los filtros, siempre encuadra las ferias que quedaron.
   - Globito de cada pin: foto de portada, nombre, dirección, días/horario y botón "Ver feria →". Se arma con `textContent`, nunca concatenando HTML, y el JSON se inyecta con `<` escapado.
   - Para abrir la ficha, el mapa manda un mensaje `{ tipo: 'abrir-feria', slug }`: en la web con `window.parent.postMessage` (la home lo acepta solo si viene de su propio iframe) y en el celu con `window.ReactNativeWebView.postMessage` (`onMessage` del WebView). La home navega con `router.push`.
 - **Hosting y CI/CD:** Repo en **GitHub** conectado a **Vercel**. Cada `git push` dispara el build estático y publica en `estoesdeunaferia.com.ar` (que redirige a `www.`, el dominio principal).
