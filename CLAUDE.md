@@ -50,7 +50,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 
 ## 4. Datos (Supabase)
 - Tabla **`ferias`**. La home trae `select('*')` filtrando `activa = true`, ordenando por `orden` (ascendente, orden manual 1, 2, 3…) y después por `created_at` (descendente).
-- Campos que usa la app: `id`, `slug`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `modalidad[]`, `precio[]`, `genero[]`, `tipo[]`, `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean), `orden`, `activa`, `created_at`.
+- Campos que usa la app: `id`, `slug`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `modalidad[]`, `precio[]`, `genero[]`, `tipo[]`, `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean), `orden`, `activa`, `created_at`, `tamano` (enum `tamano_feria`: `normal` | `grande`, por defecto `normal`; en el Table Editor aparece como desplegable).
 - Valores fijos en los filtros: precios `$`…`$$$$$`; días en minúscula y **sin tilde** (`miercoles`, `sabado`); modalidades `Fija / Local`, `Showroom fijo`, `Itinerante`. Barrios, tipos y géneros salen de los datos.
 
 ---
@@ -60,7 +60,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - **Grilla:** en web, columnas CSS por ancho de pantalla (1 / 2 desde 560px / 3 desde 900px / 4 desde 1280px), en `src/global.css`. En el celu, `FlatList` de una columna con pull-to-refresh.
 - **Card de feria:**
   - Contenedor blanco, `borderRadius: 12`, sin borde, con sombra sutil vía `boxShadow` (funciona igual en iOS, Android y web). **Sin `overflow: 'hidden'`** para no recortar la sombra: en su lugar la imagen tiene redondeadas las esquinas superiores.
-  1. **Imagen superior:** 100% de ancho, alto fijo de 160px.
+  1. **Imagen superior:** 100% de ancho, alto fijo de 160px (**320px** si la feria tiene `tamano = 'grande'`, para destacarla; el nombre también pasa de 18 a 22). Mismo ancho que las demás, para no romper la grilla tipo Pinterest. Sin badge de "Destacada": por decisión de producto, se distingue solo por el tamaño.
   2. **Cabecera:** nombre en negrita + badges ("🛍️ Compra ropa" y modalidad).
   3. **Metadatos con íconos:** dirección (barrio), días • horario, precios.
   4. **Tags:** chips grises con tipo y género.
@@ -74,6 +74,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 ## 6. Entorno Local y Flujo de Despliegue
 - **Servidor de desarrollo:** `npx expo start --port 8082` → `http://localhost:8082` (o `w` en la terminal de Expo).
   - En Brave, desactivar los Shields para verificar Firebase Analytics en local.
+  - **Es lento a propósito, no sirve para medir velocidad.** Arma cada página en el momento (4–10 s por pedido) y manda ~8 MB de JS sin comprimir. Después de cada cambio en el código recompila todo, y mientras tanto se ve "Cargando ferias desde la nube...", aunque Supabase responde en ~0,2 s. En producción el HTML tarda ~0,2 s y el JS pesa ~0,6 MB comprimido.
+- **Probar la velocidad real en local:** `npx expo export -p web` (arma el sitio en `dist/`, como Vercel) y después `npx expo serve` (normalmente en `http://localhost:8081`).
 - **Instalar paquetes:** siempre `npx expo install <paquete>` (no `npm install <paquete>`), para que elija versiones compatibles con el SDK.
 - **Publicar a producción (Vercel):**
   ```bash

@@ -266,23 +266,32 @@ export default function HomeScreen() {
       style={styles.cardFeria}
       onPress={() => irADetalle(item)}
     >
+      {/* Las ferias "grande" tienen la foto más alta y el nombre más grande */}
       {item.foto_perfil ? (
         <Image
           source={{ uri: item.foto_perfil }}
-          style={styles.imagenPortada}
+          style={[styles.imagenPortada, item.tamano === 'grande' && styles.imagenPortadaGrande]}
           contentFit="cover"
           transition={200} // aparece con un fundido suave de 0,2 segundos
           alt={item.nombre}
         />
       ) : (
-        <View style={[styles.imagenPortada, styles.imagenPlaceholder]}>
+        <View
+          style={[
+            styles.imagenPortada,
+            item.tamano === 'grande' && styles.imagenPortadaGrande,
+            styles.imagenPlaceholder,
+          ]}
+        >
           <Text style={{ color: '#A0AEC0' }}>Sin imagen</Text>
         </View>
       )}
 
       <View style={styles.cardContenido}>
         <View style={styles.cardHeader}>
-          <Text style={styles.nombreFeria}>{item.nombre}</Text>
+          <Text style={[styles.nombreFeria, item.tamano === 'grande' && styles.nombreFeriaGrande]}>
+            {item.nombre}
+          </Text>
           <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
             {item.compra_ropa && (
               <View style={styles.badgeCompraRopa}>
@@ -758,6 +767,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
+  imagenPortadaGrande: {
+    height: 320, // el doble que la normal
+  },
   imagenPlaceholder: {
     backgroundColor: '#EDF2F7',
     justifyContent: 'center',
@@ -778,6 +790,9 @@ const styles = StyleSheet.create({
     color: '#1A202C',
     flex: 1,
     marginRight: 8,
+  },
+  nombreFeriaGrande: {
+    fontSize: 22,
   },
   badgeCompraRopa: {
     paddingHorizontal: 8,
