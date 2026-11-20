@@ -189,14 +189,6 @@ export default function HomeScreen() {
     setExtrasFiltro([]);
   };
 
-  const irADetalle = (feria: Feria) => {
-    // Solo pasamos el slug: la ficha busca el resto de los datos en Supabase
-    router.push({
-      pathname: '/feria/[slug]',
-      params: { slug: feria.slug },
-    });
-  };
-
   // Coordenadas para Mapa
   const feriasConCoordenadas = feriasFiltradas.filter(f => f.lat !== null && f.lng !== null);
 
@@ -294,80 +286,81 @@ export default function HomeScreen() {
     </html>
   `;
 
+  // Cada card es un link de verdad a la ficha (en la web, un <a href="/feria/...">):
+  // Google puede seguirlo y se puede abrir en otra pestaña con Ctrl+clic o la ruedita.
+  // Solo pasamos el slug: la ficha busca el resto de los datos en Supabase.
   const renderCard = (item: Feria) => (
-    <TouchableOpacity
-      key={item.id}
-      style={styles.cardFeria}
-      onPress={() => irADetalle(item)}
-    >
-      {/* Las ferias "grande" tienen la foto más alta y el nombre más grande */}
-      {item.foto_perfil ? (
-        <Image
-          source={{ uri: item.foto_perfil }}
-          style={[styles.imagenPortada, item.tamano === 'grande' && styles.imagenPortadaGrande]}
-          contentFit="cover"
-          transition={200} // aparece con un fundido suave de 0,2 segundos
-          alt={item.nombre}
-        />
-      ) : (
-        <View
-          style={[
-            styles.imagenPortada,
-            item.tamano === 'grande' && styles.imagenPortadaGrande,
-            styles.imagenPlaceholder,
-          ]}
-        >
-          <Text style={{ color: '#A0AEC0' }}>Sin imagen</Text>
-        </View>
-      )}
-
-      <View style={styles.cardContenido}>
-        <View style={styles.cardHeader}>
-          <Text style={[styles.nombreFeria, item.tamano === 'grande' && styles.nombreFeriaGrande]}>
-            {item.nombre}
-          </Text>
-          <View style={styles.badgesCard}>
-            {item.compra_ropa && (
-              <View style={styles.badgeCompraRopa}>
-                <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
-              </View>
-            )}
-            {item.acepta_donaciones === true && (
-              <View style={styles.badgeDonaciones}>
-                <Text style={styles.badgeDonacionesText}>🤝 Acepta donaciones</Text>
-              </View>
-            )}
-            {item.acepta_cambios === true && (
-              <View style={styles.badgeCambios}>
-                <Text style={styles.badgeCambiosText}>🔄 Acepta cambios</Text>
-              </View>
-            )}
-            {item.modalidad && item.modalidad.length > 0 && (
-              <View style={styles.badgeModalidad}>
-                <Text style={styles.badgeModalidadText}>{item.modalidad.join(' / ')}</Text>
-              </View>
-            )}
+    <Link key={item.id} href={{ pathname: '/feria/[slug]', params: { slug: item.slug } }} asChild>
+      <TouchableOpacity style={styles.cardFeria}>
+        {/* Las ferias "grande" tienen la foto más alta y el nombre más grande */}
+        {item.foto_perfil ? (
+          <Image
+            source={{ uri: item.foto_perfil }}
+            style={[styles.imagenPortada, item.tamano === 'grande' && styles.imagenPortadaGrande]}
+            contentFit="cover"
+            transition={200} // aparece con un fundido suave de 0,2 segundos
+            alt={item.nombre}
+          />
+        ) : (
+          <View
+            style={[
+              styles.imagenPortada,
+              item.tamano === 'grande' && styles.imagenPortadaGrande,
+              styles.imagenPlaceholder,
+            ]}
+          >
+            <Text style={{ color: '#A0AEC0' }}>Sin imagen</Text>
           </View>
-        </View>
-
-        <Text style={styles.infoText}>📍 {item.direccion} ({item.barrio})</Text>
-        {cuandoAbre(item) ? <Text style={styles.infoText}>🗓️ {cuandoAbre(item)}</Text> : null}
-        {item.precio && item.precio.length > 0 && (
-          <Text style={styles.infoText}>🏷️ Precios: {item.precio.join(', ')}</Text>
         )}
 
-        <View style={styles.tagsContainer}>
-          {(item.tipo || []).map((tipo, index) => (
-            <View key={`${tipo}-${index}`} style={styles.tag}><Text style={styles.tagText}>{tipo}</Text></View>
-          ))}
-        </View>
+        <View style={styles.cardContenido}>
+          <View style={styles.cardHeader}>
+            <Text style={[styles.nombreFeria, item.tamano === 'grande' && styles.nombreFeriaGrande]}>
+              {item.nombre}
+            </Text>
+            <View style={styles.badgesCard}>
+              {item.compra_ropa && (
+                <View style={styles.badgeCompraRopa}>
+                  <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
+                </View>
+              )}
+              {item.acepta_donaciones === true && (
+                <View style={styles.badgeDonaciones}>
+                  <Text style={styles.badgeDonacionesText}>🤝 Acepta donaciones</Text>
+                </View>
+              )}
+              {item.acepta_cambios === true && (
+                <View style={styles.badgeCambios}>
+                  <Text style={styles.badgeCambiosText}>🔄 Acepta cambios</Text>
+                </View>
+              )}
+              {item.modalidad && item.modalidad.length > 0 && (
+                <View style={styles.badgeModalidad}>
+                  <Text style={styles.badgeModalidadText}>{item.modalidad.join(' / ')}</Text>
+                </View>
+              )}
+            </View>
+          </View>
 
-        <View style={styles.contactoContainer}>
-          {item.instagram && <Text style={styles.contactoText}>📸 {item.instagram}</Text>}
-          {item.whatsapp && <Text style={styles.contactoText}>💬 {item.whatsapp}</Text>}
+          <Text style={styles.infoText}>📍 {item.direccion} ({item.barrio})</Text>
+          {cuandoAbre(item) ? <Text style={styles.infoText}>🗓️ {cuandoAbre(item)}</Text> : null}
+          {item.precio && item.precio.length > 0 && (
+            <Text style={styles.infoText}>🏷️ Precios: {item.precio.join(', ')}</Text>
+          )}
+
+          <View style={styles.tagsContainer}>
+            {(item.tipo || []).map((tipo, index) => (
+              <View key={`${tipo}-${index}`} style={styles.tag}><Text style={styles.tagText}>{tipo}</Text></View>
+            ))}
+          </View>
+
+          <View style={styles.contactoContainer}>
+            {item.instagram && <Text style={styles.contactoText}>📸 {item.instagram}</Text>}
+            {item.whatsapp && <Text style={styles.contactoText}>💬 {item.whatsapp}</Text>}
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Link>
   );
 
   const emptyList = (
