@@ -11,6 +11,9 @@ export type Feria = {
   dias_semana: string[] | null;
   horario: string;
   observaciones_dias: string | null;
+  // Texto libre con datos extra (ej: "Una vestuarista te asesora").
+  // Puede faltar si la columna todavía no existe.
+  observaciones?: string | null;
   modalidad: string[] | null;
   precio: string[] | null;
   tipo: string[] | null;

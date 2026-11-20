@@ -224,6 +224,13 @@ export default function FeriaScreen() {
               {precio ? <Text style={styles.dato}>🏷️ Precios: {precio}</Text> : null}
             </View>
 
+            {/* Observaciones: texto libre, solo si la feria tiene alguna */}
+            {feria.observaciones?.trim() ? (
+              <View style={styles.observaciones}>
+                <Text style={styles.observacionesText}>ℹ️ {feria.observaciones.trim()}</Text>
+              </View>
+            ) : null}
+
             {etiquetas.length > 0 && (
               <View style={styles.etiquetas}>
                 {etiquetas.map((etiqueta, index) => (
@@ -425,6 +432,19 @@ const styles = StyleSheet.create({
     color: '#718096',
     marginTop: -4,
     marginLeft: 26,
+  },
+  observaciones: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#F7FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  observacionesText: {
+    fontSize: 15,
+    color: '#4A5568',
+    lineHeight: 22,
   },
   etiquetas: {
     flexDirection: 'row',
