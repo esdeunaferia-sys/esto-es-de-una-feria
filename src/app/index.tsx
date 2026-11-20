@@ -1,9 +1,9 @@
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -232,9 +232,10 @@ export default function HomeScreen() {
           ferias.forEach(function(f) {
             var globito = document.createElement('div');
 
+            // La foto se baja recién cuando se abre el globito (ver 'popupopen' más abajo)
+            var foto = null;
             if (f.foto) {
-              var foto = crear('img', 'globito-foto');
-              foto.src = f.foto;
+              foto = crear('img', 'globito-foto');
               foto.alt = f.nombre;
               globito.appendChild(foto);
             }
@@ -249,7 +250,10 @@ export default function HomeScreen() {
             info.appendChild(boton);
             globito.appendChild(info);
 
-            L.marker([f.lat, f.lng]).addTo(map).bindPopup(globito, { minWidth: 220, maxWidth: 220 });
+            var marcador = L.marker([f.lat, f.lng]).addTo(map).bindPopup(globito, { minWidth: 220, maxWidth: 220 });
+            marcador.on('popupopen', function() {
+              if (foto && !foto.getAttribute('src')) foto.src = f.foto;
+            });
           });
         </script>
       </body>
@@ -263,7 +267,13 @@ export default function HomeScreen() {
       onPress={() => irADetalle(item)}
     >
       {item.foto_perfil ? (
-        <Image source={{ uri: item.foto_perfil }} style={styles.imagenPortada} />
+        <Image
+          source={{ uri: item.foto_perfil }}
+          style={styles.imagenPortada}
+          contentFit="cover"
+          transition={200} // aparece con un fundido suave de 0,2 segundos
+          alt={item.nombre}
+        />
       ) : (
         <View style={[styles.imagenPortada, styles.imagenPlaceholder]}>
           <Text style={{ color: '#A0AEC0' }}>Sin imagen</Text>
@@ -743,6 +753,7 @@ const styles = StyleSheet.create({
   imagenPortada: {
     width: '100%',
     height: 160,
+    backgroundColor: '#EDF2F7', // gris de fondo mientras la foto carga
     // Redondeamos solo la imagen (en vez de overflow: 'hidden' en la card) para no recortar la sombra
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,

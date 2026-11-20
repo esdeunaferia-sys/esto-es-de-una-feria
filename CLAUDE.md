@@ -99,13 +99,13 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - Rediseño de la ficha (2026-11-20): columna centrada de 720px, ver sección 5.
 - Globito del mapa con foto y botón a la ficha, y textos escapados (2026-11-20). Ver sección 2.
 - La vista de la home (lista/mapa) vive en la URL (`/?vista=mapa`, leída con `useLocalSearchParams` y cambiada con `router.setParams`), no en un `useState`. Así se mantiene al volver de una ficha, al recargar y al compartir el link (2026-11-20).
+- Fotos con `expo-image` en la card de la home y en la ficha (foto principal y miniaturas), con `contentFit="cover"` y `transition={200}` (2026-11-20). En la web carga en modo *lazy* por defecto: solo baja las fotos que están por aparecer en pantalla. La foto principal de la ficha usa `loading="eager"`. Usar siempre `Image` de `expo-image`, no el de `react-native`. En el mapa, la foto de cada globito se baja recién en `popupopen`.
 
 **Próximo**
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
 
 **Pendientes detectados (sin prioridad todavía)**
 - Separar `index.tsx`: componente reutilizable de chips de filtro (hoy está copiado 6 veces), carga de datos en un hook.
-- Usar `expo-image` en vez de `Image` de React Native (mejor caché y rendimiento).
 - Limpiar restos del template y personalizar nombre, ícono y splash en `app.json`.
 
 ---

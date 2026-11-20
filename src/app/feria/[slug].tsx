@@ -1,8 +1,8 @@
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Linking,
   ScrollView,
   StyleSheet,
@@ -141,7 +141,14 @@ export default function FeriaScreen() {
 
           {/* Foto principal con proporción fija 4:3 */}
           {fotoActiva ? (
-            <Image source={{ uri: fotoActiva }} style={styles.fotoPrincipal} resizeMode="cover" />
+            <Image
+              source={{ uri: fotoActiva }}
+              style={styles.fotoPrincipal}
+              contentFit="cover"
+              transition={200} // fundido suave al cargar o al elegir otra miniatura
+              loading="eager" // es lo primero que se ve: que cargue ya, sin esperar
+              alt={feria.nombre}
+            />
           ) : (
             <View style={[styles.fotoPrincipal, styles.fotoPlaceholder]}>
               <Text style={{ color: '#A0AEC0' }}>Sin imágenes disponibles</Text>
@@ -160,6 +167,8 @@ export default function FeriaScreen() {
                   <Image
                     source={{ uri: url }}
                     style={[styles.miniatura, fotoActiva === url && styles.miniaturaActiva]}
+                    contentFit="cover"
+                    alt=""
                   />
                 </TouchableOpacity>
               ))}
