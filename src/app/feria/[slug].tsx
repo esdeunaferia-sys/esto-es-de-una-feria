@@ -216,13 +216,6 @@ export default function FeriaScreen() {
               ) : null}
 
               {precio ? <Text style={styles.dato}>🏷️ Precios: {precio}</Text> : null}
-
-              {/* Solo se muestra si el dato está cargado: null = no sabemos */}
-              {feria.compra_ropa !== null ? (
-                <Text style={styles.dato}>
-                  👕 {feria.compra_ropa ? 'Compra o toma ropa usada' : 'No compra ropa usada'}
-                </Text>
-              ) : null}
             </View>
 
             {etiquetas.length > 0 && (
