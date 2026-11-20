@@ -28,6 +28,8 @@
   - Inicializado en `/firebaseConfig.js` validando `isSupported()` antes de `getAnalytics(app)`.
   - Importado globalmente en `src/app/_layout.tsx`.
 - **Mapa:** Leaflet + OpenStreetMap, armado como un HTML en texto dentro de `index.tsx` y mostrado con `<iframe>` en web y `react-native-webview` en el celu. (`react-native-maps` está instalado pero no se usa).
+  - Globito de cada pin: foto de portada, nombre, dirección, días/horario y botón "Ver feria →". Se arma con `textContent`, nunca concatenando HTML, y el JSON se inyecta con `<` escapado.
+  - Para abrir la ficha, el mapa manda un mensaje `{ tipo: 'abrir-feria', slug }`: en la web con `window.parent.postMessage` (la home lo acepta solo si viene de su propio iframe) y en el celu con `window.ReactNativeWebView.postMessage` (`onMessage` del WebView). La home navega con `router.push`.
 - **Hosting y CI/CD:** Repo en **GitHub** conectado a **Vercel**. Cada `git push` dispara el build estático y publica en `estoesdeunaferia.com.ar`.
 
 ---
@@ -95,13 +97,13 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - ESLint configurado (`eslint.config.js`, `eslint-config-expo`) y sin errores (2026-11-19). Ojo con la regla `react-hooks/set-state-in-effect`: dentro de un `useEffect` no llamar funciones que cambian el estado antes de un `await`. Patrón usado: una función que solo trae datos (`pedirFerias()` en `index.tsx`) y el `setState` dentro del `.then(...)`.
 - Fotos comprimidas (2026-11-20): las 19 fotos pasaron de PNG/JPG a WebP (de 6,3 MB a 0,9 MB). Las originales siguen en Storage como respaldo: borrarlas cuando se confirme que todo anda bien. Algunas originales son chicas (ej. Monogatari galería 322×441, Misericordia 442×342) y conviene reemplazarlas por versiones más grandes.
 - Rediseño de la ficha (2026-11-20): columna centrada de 720px, ver sección 5.
+- Globito del mapa con foto y botón a la ficha, y textos escapados (2026-11-20). Ver sección 2.
 
 **Próximo**
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
 
 **Pendientes detectados (sin prioridad todavía)**
 - Separar `index.tsx`: componente reutilizable de chips de filtro (hoy está copiado 6 veces), carga de datos en un hook.
-- Mapa: escapar los textos que se insertan en el HTML y hacer que el popup lleve a la ficha de la feria.
 - Usar `expo-image` en vez de `Image` de React Native (mejor caché y rendimiento).
 - Limpiar restos del template y personalizar nombre, ícono y splash en `app.json`.
 

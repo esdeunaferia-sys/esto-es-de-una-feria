@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -38,8 +38,17 @@ async function pedirFerias(): Promise<Feria[] | null> {
   }
 }
 
+// El mapa manda mensajes del tipo { tipo: 'abrir-feria', slug: 'camom' }.
+// Devuelve el slug si el mensaje tiene esa forma, o null si es cualquier otra cosa.
+function slugDelMensajeDelMapa(mensaje: unknown): string | null {
+  if (typeof mensaje !== 'object' || mensaje === null) return null;
+  const { tipo, slug } = mensaje as { tipo?: unknown; slug?: unknown };
+  return tipo === 'abrir-feria' && typeof slug === 'string' ? slug : null;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
+  const iframeMapaRef = useRef<HTMLIFrameElement>(null);
   const [ferias, setFerias] = useState<Feria[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [vistaActual, setVistaActual] = useState<'lista' | 'mapa'>('lista');
@@ -62,6 +71,21 @@ export default function HomeScreen() {
       setLoading(false);
     });
   }, []);
+
+  // En la web el mapa es un <iframe>: escuchamos sus mensajes, pero solo los que
+  // vienen de NUESTRO iframe (ignoramos los de cualquier otra ventana o extensión).
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const alRecibirMensaje = (evento: MessageEvent) => {
+      if (evento.source !== iframeMapaRef.current?.contentWindow) return;
+      const slug = slugDelMensajeDelMapa(evento.data);
+      if (slug) router.push({ pathname: '/feria/[slug]', params: { slug } });
+    };
+
+    window.addEventListener('message', alRecibirMensaje);
+    return () => window.removeEventListener('message', alRecibirMensaje);
+  }, [router]);
 
   // Deslizar hacia abajo para refrescar (solo en el celu)
   const refrescarFerias = async () => {
@@ -135,7 +159,20 @@ export default function HomeScreen() {
 
   // Coordenadas para Mapa
   const feriasConCoordenadas = feriasFiltradas.filter(f => f.lat !== null && f.lng !== null);
-  
+
+  // Solo los datos que necesita el globito del mapa
+  const datosMapa = feriasConCoordenadas.map((f) => ({
+    slug: f.slug,
+    nombre: f.nombre,
+    lugar: [f.direccion, f.barrio ? `(${f.barrio})` : ''].filter(Boolean).join(' '),
+    cuando: [(f.dias_semana || []).join(', '), f.horario].filter(Boolean).join(' • '),
+    foto: f.foto_perfil,
+    lat: f.lat,
+    lng: f.lng,
+  }));
+  // `<` escapado para que ningún texto pueda cerrar el <script> del mapa
+  const datosMapaJson = JSON.stringify(datosMapa).replace(/</g, '\\u003c');
+
   const mapHtml = `
     <!DOCTYPE html>
     <html>
@@ -145,6 +182,14 @@ export default function HomeScreen() {
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <style>
           body, html, #map { height: 100%; margin: 0; padding: 0; }
+          .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
+          .leaflet-popup-content { margin: 0; width: 220px !important; font-family: system-ui, sans-serif; }
+          .globito-foto { display: block; width: 100%; height: 120px; object-fit: cover; background: #EDF2F7; }
+          .globito-info { padding: 10px 12px 12px; }
+          .globito-nombre { font-size: 15px; font-weight: 700; color: #1A202C; margin-bottom: 4px; }
+          .globito-dato { font-size: 12px; color: #4A5568; margin-top: 2px; }
+          .globito-boton { display: block; width: 100%; margin-top: 10px; padding: 8px; border: none;
+            border-radius: 8px; background: #3182CE; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
         </style>
       </head>
       <body>
@@ -158,11 +203,47 @@ export default function HomeScreen() {
             attribution: '© OpenStreetMap'
           }).addTo(map);
 
-          var ferias = ${JSON.stringify(feriasConCoordenadas)};
+          // Le avisa a la app qué feria abrir (en la web y en el celu el "buzón" es distinto)
+          function abrirFeria(slug) {
+            var mensaje = { tipo: 'abrir-feria', slug: slug };
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify(mensaje));
+            } else {
+              window.parent.postMessage(mensaje, '*');
+            }
+          }
+
+          // Crea un elemento con texto. Usamos textContent (no HTML) para que
+          // ningún nombre o dirección pueda romper el mapa.
+          function crear(etiqueta, clase, texto) {
+            var el = document.createElement(etiqueta);
+            el.className = clase;
+            if (texto) el.textContent = texto;
+            return el;
+          }
+
+          var ferias = ${datosMapaJson};
           ferias.forEach(function(f) {
-            L.marker([f.lat, f.lng])
-              .addTo(map)
-              .bindPopup('<b>' + f.nombre + '</b><br>' + f.direccion + '<br>' + (f.horario || ''));
+            var globito = document.createElement('div');
+
+            if (f.foto) {
+              var foto = crear('img', 'globito-foto');
+              foto.src = f.foto;
+              foto.alt = f.nombre;
+              globito.appendChild(foto);
+            }
+
+            var info = crear('div', 'globito-info');
+            info.appendChild(crear('div', 'globito-nombre', f.nombre));
+            if (f.lugar) info.appendChild(crear('div', 'globito-dato', '📍 ' + f.lugar));
+            if (f.cuando) info.appendChild(crear('div', 'globito-dato', '🗓️ ' + f.cuando));
+
+            var boton = crear('button', 'globito-boton', 'Ver feria →');
+            boton.onclick = function() { abrirFeria(f.slug); };
+            info.appendChild(boton);
+            globito.appendChild(info);
+
+            L.marker([f.lat, f.lng]).addTo(map).bindPopup(globito, { minWidth: 220, maxWidth: 220 });
           });
         </script>
       </body>
@@ -474,6 +555,7 @@ export default function HomeScreen() {
         )
       ) : Platform.OS === 'web' ? (
         <iframe
+          ref={iframeMapaRef}
           srcDoc={mapHtml}
           style={{ width: '100%', height: '100%', border: 'none' }}
           title="Mapa de Ferias"
@@ -484,6 +566,15 @@ export default function HomeScreen() {
           originWhitelist={['*']}
           source={{ html: mapHtml }}
           style={styles.mapa}
+          onMessage={(evento) => {
+            // En el celu el mensaje llega como texto: lo convertimos de vuelta
+            try {
+              const slug = slugDelMensajeDelMapa(JSON.parse(evento.nativeEvent.data));
+              if (slug) router.push({ pathname: '/feria/[slug]', params: { slug } });
+            } catch {
+              // mensaje que no es JSON: lo ignoramos
+            }
+          }}
         />
       )}
     </SafeAreaView>
