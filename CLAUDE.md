@@ -98,6 +98,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - Fotos comprimidas (2026-11-20): las 19 fotos pasaron de PNG/JPG a WebP (de 6,3 MB a 0,9 MB). Las originales siguen en Storage como respaldo: borrarlas cuando se confirme que todo anda bien. Algunas originales son chicas (ej. Monogatari galería 322×441, Misericordia 442×342) y conviene reemplazarlas por versiones más grandes.
 - Rediseño de la ficha (2026-11-20): columna centrada de 720px, ver sección 5.
 - Globito del mapa con foto y botón a la ficha, y textos escapados (2026-11-20). Ver sección 2.
+- La vista de la home (lista/mapa) vive en la URL (`/?vista=mapa`, leída con `useLocalSearchParams` y cambiada con `router.setParams`), no en un `useState`. Así se mantiene al volver de una ficha, al recargar y al compartir el link (2026-11-20).
 
 **Próximo**
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -51,7 +51,13 @@ export default function HomeScreen() {
   const iframeMapaRef = useRef<HTMLIFrameElement>(null);
   const [ferias, setFerias] = useState<Feria[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [vistaActual, setVistaActual] = useState<'lista' | 'mapa'>('lista');
+  // La vista (lista o mapa) se guarda en la URL (/?vista=mapa). Así, al volver
+  // de una ficha, al recargar o al compartir el link, se mantiene la vista elegida.
+  const { vista } = useLocalSearchParams<{ vista?: string }>();
+  const vistaActual: 'lista' | 'mapa' = vista === 'mapa' ? 'mapa' : 'lista';
+  const setVistaActual = (nueva: 'lista' | 'mapa') => {
+    router.setParams({ vista: nueva === 'mapa' ? 'mapa' : undefined });
+  };
 
   // Estados de Filtro
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
