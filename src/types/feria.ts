@@ -21,6 +21,8 @@ export type Feria = {
   compra_ropa: boolean | null;
   // false por defecto. Puede faltar si la columna todavía no existe.
   acepta_donaciones?: boolean;
+  // false por defecto. Puede faltar si la columna todavía no existe.
+  acepta_cambios?: boolean;
   orden: number | null;
   // Tamaño de la card en la home. En Supabase es un enum `tamano_feria`
   // ('normal' por defecto). Puede faltar si la columna todavía no existe.

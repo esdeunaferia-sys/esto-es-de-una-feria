@@ -68,6 +68,7 @@ export default function HomeScreen() {
   const [modalidadFiltro, setModalidadFiltro] = useState<string>('');
   const [compraRopaFiltro, setCompraRopaFiltro] = useState<boolean | null>(null);
   const [soloDonaciones, setSoloDonaciones] = useState(false);
+  const [soloCambios, setSoloCambios] = useState(false);
 
   // Al abrir la home: `loading` ya arranca en true, y cuando llega la respuesta
   // guardamos las ferias y apagamos la ruedita.
@@ -126,9 +127,10 @@ export default function HomeScreen() {
       if (tipoFiltro && (!f.tipo || !f.tipo.includes(tipoFiltro))) return false;
       if (compraRopaFiltro !== null && f.compra_ropa !== compraRopaFiltro) return false;
       if (soloDonaciones && f.acepta_donaciones !== true) return false;
+      if (soloCambios && f.acepta_cambios !== true) return false;
       return true;
     });
-  }, [ferias, barrioFiltro, precioFiltro, diaFiltro, tipoFiltro, modalidadFiltro, compraRopaFiltro, soloDonaciones]);
+  }, [ferias, barrioFiltro, precioFiltro, diaFiltro, tipoFiltro, modalidadFiltro, compraRopaFiltro, soloDonaciones, soloCambios]);
 
   const totalFiltrosActivos = [
     barrioFiltro, 
@@ -138,6 +140,7 @@ export default function HomeScreen() {
     modalidadFiltro,
     compraRopaFiltro !== null ? 'compraRopa' : '',
     soloDonaciones ? 'donaciones' : '',
+    soloCambios ? 'cambios' : '',
   ].filter(Boolean).length;
 
   const limpiarFiltros = () => {
@@ -148,6 +151,7 @@ export default function HomeScreen() {
     setModalidadFiltro('');
     setCompraRopaFiltro(null);
     setSoloDonaciones(false);
+    setSoloCambios(false);
   };
 
   const irADetalle = (feria: Feria) => {
@@ -298,6 +302,11 @@ export default function HomeScreen() {
                 <Text style={styles.badgeDonacionesText}>🤝 Acepta donaciones</Text>
               </View>
             )}
+            {item.acepta_cambios === true && (
+              <View style={styles.badgeCambios}>
+                <Text style={styles.badgeCambiosText}>🔄 Acepta cambios</Text>
+              </View>
+            )}
             {item.modalidad && item.modalidad.length > 0 && (
               <View style={styles.badgeModalidad}>
                 <Text style={styles.badgeModalidadText}>{item.modalidad.join(' / ')}</Text>
@@ -405,6 +414,23 @@ export default function HomeScreen() {
                 onPress={() => setSoloDonaciones(!soloDonaciones)}
               >
                 <Text style={[styles.chipTexto, soloDonaciones && styles.chipTextoSeleccionado]}>Acepta donaciones</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Filtro: ¿Acepta cambios? */}
+            <Text style={styles.labelFiltro}>🔄 ¿Acepta cambios?</Text>
+            <View style={styles.chipsContainer}>
+              <TouchableOpacity
+                style={[styles.chip, !soloCambios && styles.chipSeleccionado]}
+                onPress={() => setSoloCambios(false)}
+              >
+                <Text style={[styles.chipTexto, !soloCambios && styles.chipTextoSeleccionado]}>Todas</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.chip, soloCambios && styles.chipSeleccionado]}
+                onPress={() => setSoloCambios(!soloCambios)}
+              >
+                <Text style={[styles.chipTexto, soloCambios && styles.chipTextoSeleccionado]}>Acepta cambios</Text>
               </TouchableOpacity>
             </View>
 
@@ -805,6 +831,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#B83280',
+  },
+  badgeCambios: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#FFFAF0',
+    borderWidth: 1,
+    borderColor: '#FEEBC8',
+  },
+  badgeCambiosText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#C05621',
   },
   badgeCompraRopa: {
     paddingHorizontal: 8,
