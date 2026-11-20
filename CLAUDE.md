@@ -45,8 +45,9 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/supabase.ts`: cliente de Supabase (con adaptador de AsyncStorage seguro para el render estático).
 - `src/global.css`: fuentes y la grilla tipo Pinterest de la web (`#feria-masonry`).
 - `src/app/+not-found.tsx`: página "No encontramos esta página" (con botón a la home) para cualquier dirección que no existe. Se publica como `404.html`.
-- `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, el título y la descripción generales del sitio, las etiquetas `og:` para la vista previa al compartir y `theme-color`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58).
-- `src/app/_layout.tsx`: layout raíz (Stack sin header, siempre tema claro, Firebase).
+- `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, la descripción, las etiquetas `og:` para la vista previa al compartir, `theme-color` y `color-scheme`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58). **El `<title>` no va acá:** en SDK 57 Expo Router siempre pone al principio del `<head>` un `<title>` propio (react-helmet, `data-rh`) y el navegador usa el primero; si queda vacío, la pestaña muestra la dirección. Por eso el título va con `<Head>` de `expo-router/head` en `_layout.tsx`.
+- `src/utils/sitio.ts`: `TITULO_SITIO` y `DESCRIPCION_SITIO`, compartidos por `+html.tsx` y `_layout.tsx`.
+- `src/app/_layout.tsx`: layout raíz (Stack sin header, siempre tema claro, Firebase, y el título del sitio con `<Head>`).
 - `src/app/index.tsx`: **home** (~160 líneas, casi todo estilos): usa `useFerias` y `useFiltros`, muestra `EncabezadoHome` y elige entre lista/grilla de `FeriaCard` y `MapaFerias`. La vista (lista/mapa) vive en la URL.
 - `src/hooks/use-ferias.ts`: trae las ferias activas de Supabase (`pedirFerias()`); devuelve `ferias`, `cargando`, `refrescando` y `refrescar` (deslizar para refrescar en el celu).
 - `src/hooks/use-filtros.ts`: todo lo de los filtros: qué está marcado (un solo estado con las 6 categorías), las opciones de cada grupo, `feriasFiltradas`, `totalActivos`, `limpiar` y si el panel está abierto. Para sumar un filtro nuevo se agrega su grupo en `definiciones`.
