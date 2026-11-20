@@ -59,6 +59,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 
 ## 5. Arquitectura Visual y Diseño UI/UX
 - **Fondo general de la home:** `#F5F5F7`. Header blanco.
+- **Encabezado de la home:** título "Esto es de / una feria" en dos renglones (más adelante va un logo), el lema "• Todos tienen derecho a vestirse increíble •" y "🪞Guía de ferias americanas por @estoesdeunaferia" (link a Instagram). Además, el link "¡Sumá tu feria!" (Google Form) y el botón "🔍 Filtrar ferias ▾". En el celu va todo centrado en columna: título, Sumá tu feria, filtros. En la web desde 768px, `src/global.css` (con los `nativeID` `encabezado*`) lo pasa a una fila: filtros a la izquierda, título al medio, Sumá tu feria a la derecha. Debajo, la botonera Lista/Mapa con `maxWidth: 360`, centrada.
 - **Grilla:** en web, columnas CSS por ancho de pantalla (1 / 2 desde 560px / 3 desde 900px / 4 desde 1280px), en `src/global.css`. En el celu, `FlatList` de una columna con pull-to-refresh.
 - **Card de feria:**
   - Contenedor blanco, `borderRadius: 12`, sin borde, con sombra sutil vía `boxShadow` (funciona igual en iOS, Android y web). **Sin `overflow: 'hidden'`** para no recortar la sombra: en su lugar la imagen tiene redondeadas las esquinas superiores.

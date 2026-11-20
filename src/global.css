@@ -35,3 +35,29 @@
     column-count: 4;
   }
 }
+
+/* Encabezado de la home en pantallas anchas: filtros | título | "Sumá tu feria".
+   En el celu (y en la app nativa) queda en columna, como está en index.tsx.
+   `order` cambia el orden en que se ven sin cambiar el código. */
+@media (min-width: 768px) {
+  #encabezado {
+    flex-direction: row;
+    align-items: center;
+  }
+  #encabezado-filtros {
+    order: 0;
+    flex: 1 1 0;
+    align-items: flex-start;
+    margin-top: 0;
+  }
+  #encabezado-titulo {
+    order: 1;
+    padding: 0 16px;
+  }
+  #encabezado-sumar {
+    order: 2;
+    flex: 1 1 0;
+    align-items: flex-end;
+    margin-top: 0;
+  }
+}

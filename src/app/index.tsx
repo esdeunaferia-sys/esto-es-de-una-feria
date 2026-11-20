@@ -387,9 +387,13 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerTitulo}>
-            <Text style={styles.tituloApp}>Esto es de una feria</Text>
+        {/* Encabezado. En el celu va todo centrado y en columna: título, "Sumá tu
+            feria" y filtros. En la compu (web, desde 768px) src/global.css lo pasa a
+            una fila: filtros a la izquierda, título al medio y "Sumá tu feria" a la
+            derecha. Los nativeID son los que usa ese CSS. */}
+        <View style={styles.headerTop} nativeID="encabezado">
+          <View style={styles.headerTitulo} nativeID="encabezado-titulo">
+            <Text style={styles.tituloApp}>{'Esto es de\nuna feria'}</Text>
             <Text style={styles.lema}>• Todos tienen derecho a vestirse increíble •</Text>
             <Text style={styles.subtitulo}>
               🪞Guía de ferias americanas por{' '}
@@ -399,14 +403,23 @@ export default function HomeScreen() {
               </Link>
             </Text>
           </View>
-          <TouchableOpacity 
-            style={[styles.botonFiltroToggle, styles.botonFiltroHeader, totalFiltrosActivos > 0 && styles.botonFiltroActivo]}
-            onPress={() => setMostrarFiltros(!mostrarFiltros)}
-          >
-            <Text style={[styles.textoBotonFiltro, totalFiltrosActivos > 0 && styles.textoBotonFiltroActivo]}>
-              🔍 Filtrar ferias{totalFiltrosActivos > 0 ? ` (${totalFiltrosActivos})` : ''} {mostrarFiltros ? '▴' : '▾'}
-            </Text>
-          </TouchableOpacity>
+
+          <View style={styles.encabezadoSumar} nativeID="encabezado-sumar">
+            <Link href="https://forms.gle/hrpUULd6UGmay2JC9" target="_blank" style={styles.linkSumarFeria}>
+              ¡Sumá tu feria!
+            </Link>
+          </View>
+
+          <View style={styles.encabezadoFiltros} nativeID="encabezado-filtros">
+            <TouchableOpacity
+              style={[styles.botonFiltroToggle, totalFiltrosActivos > 0 && styles.botonFiltroActivo]}
+              onPress={() => setMostrarFiltros(!mostrarFiltros)}
+            >
+              <Text style={[styles.textoBotonFiltro, totalFiltrosActivos > 0 && styles.textoBotonFiltroActivo]}>
+                🔍 Filtrar ferias{totalFiltrosActivos > 0 ? ` (${totalFiltrosActivos})` : ''} {mostrarFiltros ? '▴' : '▾'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Panel Desplegable de Filtros */}
@@ -534,6 +547,7 @@ const styles = StyleSheet.create({
   },
   tituloApp: {
     fontSize: 28,
+    lineHeight: 32,
     fontWeight: 'bold',
     color: '#2C3E50',
     textAlign: 'center',
@@ -563,9 +577,18 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#3182CE',
   },
-  botonFiltroHeader: {
-    alignSelf: 'center',
-    marginTop: 14,
+  encabezadoSumar: {
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  linkSumarFeria: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#3182CE',
+  },
+  encabezadoFiltros: {
+    alignItems: 'center',
+    marginTop: 12,
   },
   botonFiltroActivo: {
     backgroundColor: '#3182CE',
