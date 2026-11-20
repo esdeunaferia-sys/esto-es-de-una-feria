@@ -27,7 +27,7 @@
 - **Analíticas:** **Firebase Analytics** (SDK modular `firebase`), solo tráfico general/MAU.
   - Inicializado en `/firebaseConfig.js` validando `isSupported()` antes de `getAnalytics(app)`.
   - Importado globalmente en `src/app/_layout.tsx`.
-- **Mapa:** Leaflet + OpenStreetMap, armado como un HTML en texto dentro de `index.tsx` y mostrado con `<iframe>` en web y `react-native-webview` en el celu. (`react-native-maps` está instalado pero no se usa).
+- **Mapa:** Leaflet + OpenStreetMap, armado como un HTML en texto dentro de `index.tsx` y mostrado con `<iframe>` en web y `react-native-webview` en el celu.. (`react-native-maps` se desinstaló porque no se usaba).
   - Globito de cada pin: foto de portada, nombre, dirección, días/horario y botón "Ver feria →". Se arma con `textContent`, nunca concatenando HTML, y el JSON se inyecta con `<` escapado.
   - Para abrir la ficha, el mapa manda un mensaje `{ tipo: 'abrir-feria', slug }`: en la web con `window.parent.postMessage` (la home lo acepta solo si viene de su propio iframe) y en el celu con `window.ReactNativeWebView.postMessage` (`onMessage` del WebView). La home navega con `router.push`.
 - **Hosting y CI/CD:** Repo en **GitHub** conectado a **Vercel**. Cada `git push` dispara el build estático y publica en `estoesdeunaferia.com.ar`.
@@ -46,7 +46,6 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/app/feria/[slug].tsx`: ficha de una feria (`/feria/<slug>`). Busca la feria en Supabase por `slug` (solo `activa = true`). `generateStaticParams` pide los slugs en el build y genera un HTML por feria.
 - `src/types/feria.ts`: tipo `Feria` (forma de una fila de la tabla).
 - `src/utils/dias.ts`: lista de días (`DIAS_SEMANA`, valor y etiqueta) y `formatearDias()`, que arma el texto lindo ("Lunes a viernes", "Martes, jueves y sábado", "Todos los días"). Se usa en el filtro, la card, el mapa y la ficha.
-- Restos del template de Expo sin uso: `src/app/explore.tsx`, `src/components/app-tabs*`, `web-badge`, `hint-row`, `ui/collapsible`, `scripts/reset-project.js`, `README.md` genérico.
 
 ---
 
@@ -107,6 +106,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - La vista de la home (lista/mapa) vive en la URL (`/?vista=mapa`, leída con `useLocalSearchParams` y cambiada con `router.setParams`), no en un `useState`. Así se mantiene al volver de una ficha, al recargar y al compartir el link (2026-11-20).
 - Fotos con `expo-image` en la card de la home y en la ficha (foto principal y miniaturas), con `contentFit="cover"` y `transition={200}` (2026-11-20). En la web carga en modo *lazy* por defecto: solo baja las fotos que están por aparecer en pantalla. La foto principal de la ficha usa `loading="eager"`. Usar siempre `Image` de `expo-image`, no el de `react-native`. En el mapa, la foto de cada globito se baja recién en `popupopen`.
 
+- Limpieza del template de Expo (2026-11-20): se borraron la página `/explore`, los componentes, hooks, imágenes y script de ejemplo, la animación de carga con el logo de Expo, y los paquetes sin uso (`react-native-maps`, `expo-symbols`, `expo-glass-effect`, `@expo/ui`, `expo-device`, `expo-web-browser`). README nuevo en español.
+
 **Próximo**
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
 
@@ -114,7 +115,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - Separar `index.tsx`: carga de datos en un hook.
 - Filtros en la URL (para compartir un link ya filtrado).
 - Separar "Tipo" en "A quién va dirigida" (mujer, hombre, unisex) y "Estilo": hoy elegir *mujer + vintage* trae las de mujer **o** vintage.
-- Limpiar restos del template y personalizar nombre, ícono y splash en `app.json`.
+- Personalizar nombre, ícono, favicon y splash en `app.json` (siguen los de Expo).
+- Actualizar parches de Expo (`npx expo install --check`: expo-router, expo-splash-screen y otros 3 tienen versiones nuevas del SDK 57).
 
 ---
 
