@@ -1,3 +1,5 @@
+import type { Feria } from '@/types/feria';
+
 // Días de la semana. En Supabase `dias_semana` es una lista del enum `dia_semana`
 // (minúscula y sin tilde: 'miercoles', 'sabado'). Acá está cómo se muestran.
 
@@ -43,4 +45,11 @@ export function formatearDias(dias: string[] | null | undefined): string {
       ? partes[0]
       : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`;
   return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+// "Lunes a viernes • 10 a 19 hs". Si la feria no tiene días fijos, usa la
+// observación de días (ej: "Solo en fechas especiales"). Solo lo que haya.
+export function cuandoAbre(f: Feria): string {
+  const dias = formatearDias(f.dias_semana) || f.observaciones_dias?.trim();
+  return [dias, f.horario?.trim()].filter(Boolean).join(' • ');
 }

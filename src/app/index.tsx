@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -15,9 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { supabase } from '../supabase';
 import type { Feria } from '@/types/feria';
-import { BadgesFeria } from '@/components/badges-feria';
+import { FeriaCard } from '@/components/feria-card';
 import { FiltroChips, type OpcionFiltro } from '@/components/filtro-chips';
-import { DIAS_SEMANA, formatearDias } from '@/utils/dias';
+import { cuandoAbre, DIAS_SEMANA } from '@/utils/dias';
 
 // Opciones fijas de los filtros (los días vienen de src/utils/dias.ts)
 const OPCIONES_PRECIOS = comoOpciones(['$', '$$', '$$$', '$$$$', '$$$$$']);
@@ -37,13 +36,6 @@ function comoOpciones(valores: string[]): OpcionFiltro[] {
 function ordenarAlfabetico(valores: (string | null | undefined)[]): string[] {
   const unicos = Array.from(new Set(valores.filter((v): v is string => !!v)));
   return unicos.sort((a, b) => a.localeCompare(b, 'es'));
-}
-
-// "Lunes a viernes • 10 a 19 hs". Si la feria no tiene días fijos, usa la
-// observación de días (ej: "Solo en fechas especiales"). Solo lo que haya.
-function cuandoAbre(f: Feria): string {
-  const dias = formatearDias(f.dias_semana) || f.observaciones_dias?.trim();
-  return [dias, f.horario?.trim()].filter(Boolean).join(' • ');
 }
 
 // ¿La feria tiene alguna de las opciones marcadas? Si no hay nada marcado, pasa.
@@ -298,60 +290,6 @@ export default function HomeScreen() {
     </html>
   `;
 
-  // Cada card es un link de verdad a la ficha (en la web, un <a href="/feria/...">):
-  // Google puede seguirlo y se puede abrir en otra pestaña con Ctrl+clic o la ruedita.
-  // Solo pasamos el slug: la ficha busca el resto de los datos en Supabase.
-  const renderCard = (item: Feria) => (
-    <Link key={item.id} href={{ pathname: '/feria/[slug]', params: { slug: item.slug } }} asChild>
-      <TouchableOpacity style={styles.cardFeria}>
-        {/* Las ferias "grande" tienen la foto más alta y el nombre más grande */}
-        {item.foto_perfil ? (
-          <Image
-            source={{ uri: item.foto_perfil }}
-            style={[styles.imagenPortada, item.tamano === 'grande' && styles.imagenPortadaGrande]}
-            contentFit="cover"
-            transition={200} // aparece con un fundido suave de 0,2 segundos
-            alt={item.nombre}
-          />
-        ) : (
-          <View
-            style={[
-              styles.imagenPortada,
-              item.tamano === 'grande' && styles.imagenPortadaGrande,
-              styles.imagenPlaceholder,
-            ]}
-          >
-            <Text style={{ color: '#A0AEC0' }}>Sin imagen</Text>
-          </View>
-        )}
-
-        <View style={styles.cardContenido}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.nombreFeria, item.tamano === 'grande' && styles.nombreFeriaGrande]}>
-              {item.nombre}
-            </Text>
-            <BadgesFeria feria={item} tamano="chico" style={styles.badgesCard} />
-          </View>
-
-          <Text style={styles.infoText}>📍 {item.direccion} ({item.barrio})</Text>
-          {cuandoAbre(item) ? <Text style={styles.infoText}>🗓️ {cuandoAbre(item)}</Text> : null}
-          {item.precio && item.precio.length > 0 && (
-            <Text style={styles.infoText}>🏷️ Precios: {item.precio.join(', ')}</Text>
-          )}
-
-          {/* El Instagram y el WhatsApp no van en la card: están como botones en la ficha */}
-          {item.tipo && item.tipo.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {item.tipo.map((tipo, index) => (
-                <View key={`${tipo}-${index}`} style={styles.tag}><Text style={styles.tagText}>{tipo}</Text></View>
-              ))}
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
-    </Link>
-  );
-
   const emptyList = (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTexto}>No encontramos ferias que coincidan con esos filtros.</Text>
@@ -473,7 +411,9 @@ export default function HomeScreen() {
                 emptyList
               ) : (
                 <View style={styles.listaWeb} nativeID="feria-masonry">
-                  {feriasFiltradas.map(renderCard)}
+                  {feriasFiltradas.map((f) => (
+                    <FeriaCard key={f.id} feria={f} />
+                  ))}
                 </View>
               )}
             </View>
@@ -488,7 +428,11 @@ export default function HomeScreen() {
             onRefresh={refrescarFerias}
             refreshing={refrescando}
             ListEmptyComponent={emptyList}
-            renderItem={({ item }) => <View style={styles.itemLista}>{renderCard(item)}</View>}
+            renderItem={({ item }) => (
+              <View style={styles.itemLista}>
+                <FeriaCard feria={item} />
+              </View>
+            )}
           />
         )
       ) : (
@@ -685,75 +629,6 @@ const styles = StyleSheet.create({
   },
   listaWeb: {
     width: '100%',
-  },
-  cardFeria: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 16,
-    // Sombra sutil multiplataforma (iOS, Android y web) para despegar la card del fondo
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
-  },
-  imagenPortada: {
-    width: '100%',
-    height: 160,
-    backgroundColor: '#EDF2F7', // gris de fondo mientras la foto carga
-    // Redondeamos solo la imagen (en vez de overflow: 'hidden' en la card) para no recortar la sombra
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  imagenPortadaGrande: {
-    height: 320, // el doble que la normal
-  },
-  imagenPlaceholder: {
-    backgroundColor: '#EDF2F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardContenido: {
-    padding: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  nombreFeria: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A202C',
-    flex: 1,
-    marginRight: 8,
-  },
-  nombreFeriaGrande: {
-    fontSize: 22,
-  },
-  // Badges de la card: a la derecha del nombre
-  badgesCard: {
-    justifyContent: 'flex-end',
-    flexShrink: 1,
-  },
-  infoText: {
-    fontSize: 13,
-    color: '#4A5568',
-    marginBottom: 4,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
-  },
-  tag: {
-    backgroundColor: '#EDF2F7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  tagText: {
-    fontSize: 11,
-    color: '#4A5568',
-    fontWeight: '600',
   },
   mapa: {
     flex: 1,

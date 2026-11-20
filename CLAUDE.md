@@ -47,12 +47,13 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/app/+not-found.tsx`: página "No encontramos esta página" (con botón a la home) para cualquier dirección que no existe. Se publica como `404.html`.
 - `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, el título y la descripción generales del sitio, las etiquetas `og:` para la vista previa al compartir y `theme-color`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58).
 - `src/app/_layout.tsx`: layout raíz (Stack sin header, siempre tema claro, Firebase).
-- `src/app/index.tsx`: **home** (~750 líneas): carga de ferias, filtros, lista/grilla y mapa.
+- `src/app/index.tsx`: **home** (~660 líneas): carga de ferias, filtros, encabezado, lista/grilla y mapa.
+- `src/components/feria-card.tsx`: la card de una feria en la home (link a la ficha, foto, nombre, badges, datos y chips de tipo), con sus estilos.
 - `src/components/badges-feria.tsx`: los badges de una feria (🛍️ Compra ropa → 🤝 Acepta donaciones → 🔄 Acepta cambios → modalidad), compartidos por la card (`tamano="chico"`) y la ficha. Para sumar un badge nuevo se agrega en un solo lugar.
 - `src/components/filtro-chips.tsx`: grupo de chips de filtro con título y selección múltiple (lo usan todos los filtros de la home).
 - `src/app/feria/[slug].tsx`: ficha de una feria (`/feria/<slug>`). Busca la feria en Supabase por `slug` (solo `activa = true`). `generateStaticParams` pide los slugs en el build y genera un HTML por feria.
 - `src/types/feria.ts`: tipo `Feria` (forma de una fila de la tabla).
-- `src/utils/dias.ts`: lista de días (`DIAS_SEMANA`, valor y etiqueta) y `formatearDias()`, que arma el texto lindo ("Lunes a viernes", "Martes, jueves y sábado", "Todos los días"). Se usa en el filtro, la card, el mapa y la ficha.
+- `src/utils/dias.ts`: lista de días (`DIAS_SEMANA`, valor y etiqueta) y `formatearDias()`, que arma el texto lindo ("Lunes a viernes", "Martes, jueves y sábado", "Todos los días"). Se usa en el filtro, la card, el mapa y la ficha. También `cuandoAbre(feria)`: "Lunes a viernes • 10 a 19 hs" (o la observación de días si no tiene días fijos), para la card y el mapa.
 
 ---
 
