@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { supabase } from '@/supabase';
+import { BadgesFeria } from '@/components/badges-feria';
 import type { Feria } from '@/types/feria';
 import { formatearDias } from '@/utils/dias';
 
@@ -180,33 +181,7 @@ export default function FeriaScreen() {
           <View style={styles.tarjeta}>
             <Text style={styles.titulo}>{feria.nombre}</Text>
 
-            {(!!feria.modalidad?.length ||
-              feria.compra_ropa === true ||
-              feria.acepta_donaciones === true ||
-              feria.acepta_cambios === true) && (
-              <View style={styles.badges}>
-                {feria.modalidad && feria.modalidad.length > 0 && (
-                  <View style={styles.badgeModalidad}>
-                    <Text style={styles.badgeModalidadText}>{feria.modalidad.join(' / ')}</Text>
-                  </View>
-                )}
-                {feria.compra_ropa === true && (
-                  <View style={styles.badgeCompraRopa}>
-                    <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
-                  </View>
-                )}
-                {feria.acepta_donaciones === true && (
-                  <View style={styles.badgeDonaciones}>
-                    <Text style={styles.badgeDonacionesText}>🤝 Acepta donaciones</Text>
-                  </View>
-                )}
-                {feria.acepta_cambios === true && (
-                  <View style={styles.badgeCambios}>
-                    <Text style={styles.badgeCambiosText}>🔄 Acepta cambios</Text>
-                  </View>
-                )}
-              </View>
-            )}
+            <BadgesFeria feria={feria} style={styles.badges} />
 
             <View style={styles.datos}>
               {feria.direccion ? (
@@ -364,60 +339,7 @@ const styles = StyleSheet.create({
     color: '#1A202C',
   },
   badges: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
     marginTop: 10,
-  },
-  badgeModalidad: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#E6FFFA',
-  },
-  badgeModalidadText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#234E52',
-  },
-  badgeDonaciones: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#FFF5F7',
-    borderWidth: 1,
-    borderColor: '#FED7E2',
-  },
-  badgeDonacionesText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#B83280',
-  },
-  badgeCambios: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#FFFAF0',
-    borderWidth: 1,
-    borderColor: '#FEEBC8',
-  },
-  badgeCambiosText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#C05621',
-  },
-  badgeCompraRopa: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#EBF8FF',
-    borderWidth: 1,
-    borderColor: '#BEE3F8',
-  },
-  badgeCompraRopaText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#2B6CB0',
   },
   datos: {
     marginTop: 16,

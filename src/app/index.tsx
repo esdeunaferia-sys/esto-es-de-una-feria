@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { supabase } from '../supabase';
 import type { Feria } from '@/types/feria';
+import { BadgesFeria } from '@/components/badges-feria';
 import { FiltroChips, type OpcionFiltro } from '@/components/filtro-chips';
 import { DIAS_SEMANA, formatearDias } from '@/utils/dias';
 
@@ -329,28 +330,7 @@ export default function HomeScreen() {
             <Text style={[styles.nombreFeria, item.tamano === 'grande' && styles.nombreFeriaGrande]}>
               {item.nombre}
             </Text>
-            <View style={styles.badgesCard}>
-              {item.compra_ropa && (
-                <View style={styles.badgeCompraRopa}>
-                  <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
-                </View>
-              )}
-              {item.acepta_donaciones === true && (
-                <View style={styles.badgeDonaciones}>
-                  <Text style={styles.badgeDonacionesText}>🤝 Acepta donaciones</Text>
-                </View>
-              )}
-              {item.acepta_cambios === true && (
-                <View style={styles.badgeCambios}>
-                  <Text style={styles.badgeCambiosText}>🔄 Acepta cambios</Text>
-                </View>
-              )}
-              {item.modalidad && item.modalidad.length > 0 && (
-                <View style={styles.badgeModalidad}>
-                  <Text style={styles.badgeModalidadText}>{item.modalidad.join(' / ')}</Text>
-                </View>
-              )}
-            </View>
+            <BadgesFeria feria={item} tamano="chico" style={styles.badgesCard} />
           </View>
 
           <Text style={styles.infoText}>📍 {item.direccion} ({item.barrio})</Text>
@@ -748,63 +728,10 @@ const styles = StyleSheet.create({
   nombreFeriaGrande: {
     fontSize: 22,
   },
-  // Contenedor de badges de la card: si no entran en una línea, pasan a la siguiente
+  // Badges de la card: a la derecha del nombre
   badgesCard: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'flex-end',
-    gap: 6,
     flexShrink: 1,
-  },
-  badgeDonaciones: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#FFF5F7',
-    borderWidth: 1,
-    borderColor: '#FED7E2',
-  },
-  badgeDonacionesText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#B83280',
-  },
-  badgeCambios: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#FFFAF0',
-    borderWidth: 1,
-    borderColor: '#FEEBC8',
-  },
-  badgeCambiosText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#C05621',
-  },
-  badgeCompraRopa: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#EBF8FF',
-    borderWidth: 1,
-    borderColor: '#BEE3F8',
-  },
-  badgeCompraRopaText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2B6CB0',
-  },
-  badgeModalidad: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#E6FFFA',
-  },
-  badgeModalidadText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#234E52',
   },
   infoText: {
     fontSize: 13,

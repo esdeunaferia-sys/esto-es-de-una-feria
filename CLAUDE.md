@@ -48,6 +48,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, el título y la descripción generales del sitio, las etiquetas `og:` para la vista previa al compartir y `theme-color`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58).
 - `src/app/_layout.tsx`: layout raíz (Stack sin header, siempre tema claro, Firebase).
 - `src/app/index.tsx`: **home** (~750 líneas): carga de ferias, filtros, lista/grilla y mapa.
+- `src/components/badges-feria.tsx`: los badges de una feria (🛍️ Compra ropa → 🤝 Acepta donaciones → 🔄 Acepta cambios → modalidad), compartidos por la card (`tamano="chico"`) y la ficha. Para sumar un badge nuevo se agrega en un solo lugar.
 - `src/components/filtro-chips.tsx`: grupo de chips de filtro con título y selección múltiple (lo usan todos los filtros de la home).
 - `src/app/feria/[slug].tsx`: ficha de una feria (`/feria/<slug>`). Busca la feria en Supabase por `slug` (solo `activa = true`). `generateStaticParams` pide los slugs en el build y genera un HTML por feria.
 - `src/types/feria.ts`: tipo `Feria` (forma de una fila de la tabla).
