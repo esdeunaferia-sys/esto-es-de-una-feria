@@ -40,6 +40,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `firebaseConfig.js`: inicialización de Firebase App y Analytics.
 - `src/supabase.ts`: cliente de Supabase (con adaptador de AsyncStorage seguro para el render estático).
 - `src/global.css`: fuentes y la grilla tipo Pinterest de la web (`#feria-masonry`).
+- `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, el título y la descripción generales del sitio, las etiquetas `og:` para la vista previa al compartir y `theme-color`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58).
 - `src/app/_layout.tsx`: layout raíz (Stack sin header, tema claro/oscuro, splash, Firebase).
 - `src/app/index.tsx`: **home** (~750 líneas): carga de ferias, filtros, lista/grilla y mapa.
 - `src/components/filtro-chips.tsx`: grupo de chips de filtro con título y selección múltiple (lo usan todos los filtros de la home).
@@ -107,6 +108,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - Fotos con `expo-image` en la card de la home y en la ficha (foto principal y miniaturas), con `contentFit="cover"` y `transition={200}` (2026-11-20). En la web carga en modo *lazy* por defecto: solo baja las fotos que están por aparecer en pantalla. La foto principal de la ficha usa `loading="eager"`. Usar siempre `Image` de `expo-image`, no el de `react-native`. En el mapa, la foto de cada globito se baja recién en `popupopen`.
 
 - Limpieza del template de Expo (2026-11-20): se borraron la página `/explore`, los componentes, hooks, imágenes y script de ejemplo, la animación de carga con el logo de Expo, y los paquetes sin uso (`react-native-maps`, `expo-symbols`, `expo-glass-effect`, `@expo/ui`, `expo-device`, `expo-web-browser`). README nuevo en español.
+
+- Título, descripción e idioma del sitio (2026-11-20) en `src/app/+html.tsx`. Por ahora todas las páginas, fichas incluidas, comparten el mismo título; falta una imagen para `og:image` (cuando haya logo).
 
 **Próximo**
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
