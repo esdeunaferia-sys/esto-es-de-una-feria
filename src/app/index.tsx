@@ -15,6 +15,43 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { supabase } from '../supabase';
 import type { Feria } from '@/types/feria';
+import { FiltroChips, type OpcionFiltro } from '@/components/filtro-chips';
+
+// Opciones fijas de los filtros. `valor` es como está en la base (días en
+// minúscula y sin tilde) y `etiqueta` es como se muestra.
+const OPCIONES_DIAS: OpcionFiltro[] = [
+  { valor: 'lunes', etiqueta: 'Lunes' },
+  { valor: 'martes', etiqueta: 'Martes' },
+  { valor: 'miercoles', etiqueta: 'Miércoles' },
+  { valor: 'jueves', etiqueta: 'Jueves' },
+  { valor: 'viernes', etiqueta: 'Viernes' },
+  { valor: 'sabado', etiqueta: 'Sábado' },
+  { valor: 'domingo', etiqueta: 'Domingo' },
+];
+const OPCIONES_PRECIOS = comoOpciones(['$', '$$', '$$$', '$$$$', '$$$$$']);
+// Los "sí/no" de la feria. El valor es el nombre de la columna en Supabase.
+const OPCIONES_EXTRAS: OpcionFiltro[] = [
+  { valor: 'compra_ropa', etiqueta: '🛍️ Compra ropa' },
+  { valor: 'acepta_donaciones', etiqueta: '🤝 Acepta donaciones' },
+  { valor: 'acepta_cambios', etiqueta: '🔄 Acepta cambios' },
+];
+
+// Para opciones donde lo que se muestra es igual a lo que está en la base
+function comoOpciones(valores: string[]): OpcionFiltro[] {
+  return valores.map((valor) => ({ valor, etiqueta: valor }));
+}
+
+// Saca vacíos y repetidos, y ordena alfabéticamente (respetando tildes)
+function ordenarAlfabetico(valores: (string | null | undefined)[]): string[] {
+  const unicos = Array.from(new Set(valores.filter((v): v is string => !!v)));
+  return unicos.sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+// ¿La feria tiene alguna de las opciones marcadas? Si no hay nada marcado, pasa.
+function coincideAlguna(marcados: string[], valoresDeLaFeria: (string | null)[] | null): boolean {
+  if (marcados.length === 0) return true;
+  return marcados.some((m) => valoresDeLaFeria?.includes(m) ?? false);
+}
 
 // Pide las ferias activas a Supabase. Solo trae los datos (no toca el estado
 // de la pantalla): devuelve la lista, o null si algo falló.
@@ -61,14 +98,13 @@ export default function HomeScreen() {
 
   // Estados de Filtro
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
-  const [barrioFiltro, setBarrioFiltro] = useState<string>('');
-  const [precioFiltro, setPrecioFiltro] = useState<string>('');
-  const [diaFiltro, setDiaFiltro] = useState<string>('');
-  const [tipoFiltro, setTipoFiltro] = useState<string>('');
-  const [modalidadFiltro, setModalidadFiltro] = useState<string>('');
-  const [compraRopaFiltro, setCompraRopaFiltro] = useState<boolean | null>(null);
-  const [soloDonaciones, setSoloDonaciones] = useState(false);
-  const [soloCambios, setSoloCambios] = useState(false);
+  // Cada filtro guarda la lista de opciones marcadas. Lista vacía = no filtra.
+  const [diasFiltro, setDiasFiltro] = useState<string[]>([]);
+  const [barriosFiltro, setBarriosFiltro] = useState<string[]>([]);
+  const [preciosFiltro, setPreciosFiltro] = useState<string[]>([]);
+  const [tiposFiltro, setTiposFiltro] = useState<string[]>([]);
+  const [modalidadesFiltro, setModalidadesFiltro] = useState<string[]>([]);
+  const [extrasFiltro, setExtrasFiltro] = useState<string[]>([]);
 
   // Al abrir la home: `loading` ya arranca en true, y cuando llega la respuesta
   // guardamos las ferias y apagamos la ruedita.
@@ -102,56 +138,57 @@ export default function HomeScreen() {
     setLoading(false);
   };
 
-  // Opciones únicas para filtros
-  const opcionesBarrios = useMemo(() => {
-    const barrios = ferias.map(f => f.barrio).filter(Boolean);
-    return Array.from(new Set(barrios));
-  }, [ferias]);
+  // Opciones de barrio, tipo y modalidad: salen de los datos, sin repetir y en orden alfabético
+  const opcionesBarrios = useMemo(
+    () => comoOpciones(ordenarAlfabetico(ferias.map((f) => f.barrio))),
+    [ferias],
+  );
+  const opcionesTipos = useMemo(
+    () => comoOpciones(ordenarAlfabetico(ferias.flatMap((f) => f.tipo || []))),
+    [ferias],
+  );
+  const opcionesModalidades = useMemo(
+    () => comoOpciones(ordenarAlfabetico(ferias.flatMap((f) => f.modalidad || []))),
+    [ferias],
+  );
 
-  const opcionesPrecios = ['$', '$$', '$$$', '$$$$', '$$$$$'];
-  const opcionesDias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-  const opcionesModalidades = ['Fija / Local', 'Showroom fijo', 'Itinerante'];
-
-  const opcionesTipos = useMemo(() => {
-    const tipos = ferias.flatMap(f => f.tipo || []).filter(Boolean);
-    return Array.from(new Set(tipos));
-  }, [ferias]);
-
-  // Filtrado de ferias
+  // Filtrado de ferias.
+  // Dentro de una categoría alcanza con que coincida UNA opción (sábado o domingo).
+  // Entre categorías tienen que cumplirse TODAS (sábado o domingo, y además en Palermo).
   const feriasFiltradas = useMemo(() => {
-    return ferias.filter(f => {
-      if (barrioFiltro && f.barrio !== barrioFiltro) return false;
-      if (precioFiltro && (!f.precio || !f.precio.includes(precioFiltro))) return false;
-      if (modalidadFiltro && (!f.modalidad || !f.modalidad.includes(modalidadFiltro))) return false;
-      if (diaFiltro && (!f.dias_semana || !f.dias_semana.includes(diaFiltro.toLowerCase()))) return false;
-      if (tipoFiltro && (!f.tipo || !f.tipo.includes(tipoFiltro))) return false;
-      if (compraRopaFiltro !== null && f.compra_ropa !== compraRopaFiltro) return false;
-      if (soloDonaciones && f.acepta_donaciones !== true) return false;
-      if (soloCambios && f.acepta_cambios !== true) return false;
+    return ferias.filter((f) => {
+      if (!coincideAlguna(diasFiltro, f.dias_semana)) return false;
+      if (!coincideAlguna(barriosFiltro, [f.barrio])) return false;
+      if (!coincideAlguna(preciosFiltro, f.precio)) return false;
+      if (!coincideAlguna(tiposFiltro, f.tipo)) return false;
+      if (!coincideAlguna(modalidadesFiltro, f.modalidad)) return false;
+      // Extras: igual que el resto, alcanza con que cumpla UNO de los marcados
+      const extrasDeLaFeria = [
+        f.compra_ropa === true ? 'compra_ropa' : null,
+        f.acepta_donaciones === true ? 'acepta_donaciones' : null,
+        f.acepta_cambios === true ? 'acepta_cambios' : null,
+      ];
+      if (!coincideAlguna(extrasFiltro, extrasDeLaFeria)) return false;
       return true;
     });
-  }, [ferias, barrioFiltro, precioFiltro, diaFiltro, tipoFiltro, modalidadFiltro, compraRopaFiltro, soloDonaciones, soloCambios]);
+  }, [ferias, diasFiltro, barriosFiltro, preciosFiltro, tiposFiltro, modalidadesFiltro, extrasFiltro]);
 
-  const totalFiltrosActivos = [
-    barrioFiltro, 
-    precioFiltro, 
-    diaFiltro, 
-    tipoFiltro,
-    modalidadFiltro,
-    compraRopaFiltro !== null ? 'compraRopa' : '',
-    soloDonaciones ? 'donaciones' : '',
-    soloCambios ? 'cambios' : '',
-  ].filter(Boolean).length;
+  // Cantidad de chips marcados en total (se muestra en el botón "Filtros")
+  const totalFiltrosActivos =
+    diasFiltro.length +
+    barriosFiltro.length +
+    preciosFiltro.length +
+    tiposFiltro.length +
+    modalidadesFiltro.length +
+    extrasFiltro.length;
 
   const limpiarFiltros = () => {
-    setBarrioFiltro('');
-    setPrecioFiltro('');
-    setDiaFiltro('');
-    setTipoFiltro('');
-    setModalidadFiltro('');
-    setCompraRopaFiltro(null);
-    setSoloDonaciones(false);
-    setSoloCambios(false);
+    setDiasFiltro([]);
+    setBarriosFiltro([]);
+    setPreciosFiltro([]);
+    setTiposFiltro([]);
+    setModalidadesFiltro([]);
+    setExtrasFiltro([]);
   };
 
   const irADetalle = (feria: Feria) => {
@@ -369,7 +406,12 @@ export default function HomeScreen() {
         {mostrarFiltros && (
           <ScrollView style={styles.panelFiltros} nestedScrollEnabled>
             <View style={styles.headerFiltros}>
-              <Text style={styles.tituloFiltros}>Filtrar ferias</Text>
+              <Text style={styles.tituloFiltros}>
+                Filtrar ferias{' '}
+                <Text style={styles.contadorFiltros}>
+                  · {feriasFiltradas.length} {feriasFiltradas.length === 1 ? 'feria' : 'ferias'}
+                </Text>
+              </Text>
               {totalFiltrosActivos > 0 && (
                 <TouchableOpacity onPress={limpiarFiltros}>
                   <Text style={styles.textoLimpiar}>Limpiar todos</Text>
@@ -377,171 +419,12 @@ export default function HomeScreen() {
               )}
             </View>
 
-            {/* Filtro: ¿Compra ropa? */}
-            <Text style={styles.labelFiltro}>🛍️ ¿Compra ropa?</Text>
-            <View style={styles.chipsContainer}>
-              <TouchableOpacity 
-                style={[styles.chip, compraRopaFiltro === null && styles.chipSeleccionado]}
-                onPress={() => setCompraRopaFiltro(null)}
-              >
-                <Text style={[styles.chipTexto, compraRopaFiltro === null && styles.chipTextoSeleccionado]}>Todos</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.chip, compraRopaFiltro === true && styles.chipSeleccionado]}
-                onPress={() => setCompraRopaFiltro(compraRopaFiltro === true ? null : true)}
-              >
-                <Text style={[styles.chipTexto, compraRopaFiltro === true && styles.chipTextoSeleccionado]}>Sí compra</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.chip, compraRopaFiltro === false && styles.chipSeleccionado]}
-                onPress={() => setCompraRopaFiltro(compraRopaFiltro === false ? null : false)}
-              >
-                <Text style={[styles.chipTexto, compraRopaFiltro === false && styles.chipTextoSeleccionado]}>No compra</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Filtro: ¿Acepta donaciones? */}
-            <Text style={styles.labelFiltro}>🤝 ¿Acepta donaciones?</Text>
-            <View style={styles.chipsContainer}>
-              <TouchableOpacity
-                style={[styles.chip, !soloDonaciones && styles.chipSeleccionado]}
-                onPress={() => setSoloDonaciones(false)}
-              >
-                <Text style={[styles.chipTexto, !soloDonaciones && styles.chipTextoSeleccionado]}>Todas</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.chip, soloDonaciones && styles.chipSeleccionado]}
-                onPress={() => setSoloDonaciones(!soloDonaciones)}
-              >
-                <Text style={[styles.chipTexto, soloDonaciones && styles.chipTextoSeleccionado]}>Acepta donaciones</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Filtro: ¿Acepta cambios? */}
-            <Text style={styles.labelFiltro}>🔄 ¿Acepta cambios?</Text>
-            <View style={styles.chipsContainer}>
-              <TouchableOpacity
-                style={[styles.chip, !soloCambios && styles.chipSeleccionado]}
-                onPress={() => setSoloCambios(false)}
-              >
-                <Text style={[styles.chipTexto, !soloCambios && styles.chipTextoSeleccionado]}>Todas</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.chip, soloCambios && styles.chipSeleccionado]}
-                onPress={() => setSoloCambios(!soloCambios)}
-              >
-                <Text style={[styles.chipTexto, soloCambios && styles.chipTextoSeleccionado]}>Acepta cambios</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Filtro: Barrio */}
-            {opcionesBarrios.length > 0 && (
-              <>
-                <Text style={styles.labelFiltro}>📍 Barrio</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
-                  <TouchableOpacity 
-                    style={[styles.chip, barrioFiltro === '' && styles.chipSeleccionado]}
-                    onPress={() => setBarrioFiltro('')}
-                  >
-                    <Text style={[styles.chipTexto, barrioFiltro === '' && styles.chipTextoSeleccionado]}>Todos</Text>
-                  </TouchableOpacity>
-                  {opcionesBarrios.map(barrio => (
-                    <TouchableOpacity 
-                      key={barrio} 
-                      style={[styles.chip, barrioFiltro === barrio && styles.chipSeleccionado]}
-                      onPress={() => setBarrioFiltro(barrioFiltro === barrio ? '' : barrio)}
-                    >
-                      <Text style={[styles.chipTexto, barrioFiltro === barrio && styles.chipTextoSeleccionado]}>{barrio}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </>
-            )}
-
-            {/* Filtro: Día */}
-            <Text style={styles.labelFiltro}>🗓️ Día</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
-              <TouchableOpacity 
-                style={[styles.chip, diaFiltro === '' && styles.chipSeleccionado]}
-                onPress={() => setDiaFiltro('')}
-              >
-                <Text style={[styles.chipTexto, diaFiltro === '' && styles.chipTextoSeleccionado]}>Todos</Text>
-              </TouchableOpacity>
-              {opcionesDias.map(dia => (
-                <TouchableOpacity 
-                  key={dia} 
-                  style={[styles.chip, diaFiltro === dia && styles.chipSeleccionado]}
-                  onPress={() => setDiaFiltro(diaFiltro === dia ? '' : dia)}
-                >
-                  <Text style={[styles.chipTexto, diaFiltro === dia && styles.chipTextoSeleccionado]}>{dia}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Filtro: Modalidad */}
-            <Text style={styles.labelFiltro}>🏢 Modalidad</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
-              <TouchableOpacity 
-                style={[styles.chip, modalidadFiltro === '' && styles.chipSeleccionado]}
-                onPress={() => setModalidadFiltro('')}
-              >
-                <Text style={[styles.chipTexto, modalidadFiltro === '' && styles.chipTextoSeleccionado]}>Todas</Text>
-              </TouchableOpacity>
-              {opcionesModalidades.map(mod => (
-                <TouchableOpacity 
-                  key={mod} 
-                  style={[styles.chip, modalidadFiltro === mod && styles.chipSeleccionado]}
-                  onPress={() => setModalidadFiltro(modalidadFiltro === mod ? '' : mod)}
-                >
-                  <Text style={[styles.chipTexto, modalidadFiltro === mod && styles.chipTextoSeleccionado]}>{mod}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Filtro: Precios */}
-            <Text style={styles.labelFiltro}>🏷️ Rango de Precios</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
-              <TouchableOpacity 
-                style={[styles.chip, precioFiltro === '' && styles.chipSeleccionado]}
-                onPress={() => setPrecioFiltro('')}
-              >
-                <Text style={[styles.chipTexto, precioFiltro === '' && styles.chipTextoSeleccionado]}>Todos</Text>
-              </TouchableOpacity>
-              {opcionesPrecios.map(precio => (
-                <TouchableOpacity 
-                  key={precio} 
-                  style={[styles.chip, precioFiltro === precio && styles.chipSeleccionado]}
-                  onPress={() => setPrecioFiltro(precioFiltro === precio ? '' : precio)}
-                >
-                  <Text style={[styles.chipTexto, precioFiltro === precio && styles.chipTextoSeleccionado]}>{precio}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Filtro: Tipo / Estilo */}
-            {opcionesTipos.length > 0 && (
-              <>
-                <Text style={styles.labelFiltro}>🎨 Estilo / Tipo</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
-                  <TouchableOpacity 
-                    style={[styles.chip, tipoFiltro === '' && styles.chipSeleccionado]}
-                    onPress={() => setTipoFiltro('')}
-                  >
-                    <Text style={[styles.chipTexto, tipoFiltro === '' && styles.chipTextoSeleccionado]}>Todos</Text>
-                  </TouchableOpacity>
-                  {opcionesTipos.map(tipo => (
-                    <TouchableOpacity 
-                      key={tipo} 
-                      style={[styles.chip, tipoFiltro === tipo && styles.chipSeleccionado]}
-                      onPress={() => setTipoFiltro(tipoFiltro === tipo ? '' : tipo)}
-                    >
-                      <Text style={[styles.chipTexto, tipoFiltro === tipo && styles.chipTextoSeleccionado]}>{tipo}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </>
-            )}
-
+            <FiltroChips titulo="🗓️ Día" opciones={OPCIONES_DIAS} seleccionados={diasFiltro} onCambiar={setDiasFiltro} />
+            <FiltroChips titulo="📍 Barrio" opciones={opcionesBarrios} seleccionados={barriosFiltro} onCambiar={setBarriosFiltro} />
+            <FiltroChips titulo="🏷️ Precio" opciones={OPCIONES_PRECIOS} seleccionados={preciosFiltro} onCambiar={setPreciosFiltro} />
+            <FiltroChips titulo="🎨 Estilo / Tipo" opciones={opcionesTipos} seleccionados={tiposFiltro} onCambiar={setTiposFiltro} />
+            <FiltroChips titulo="🏢 Modalidad" opciones={opcionesModalidades} seleccionados={modalidadesFiltro} onCambiar={setModalidadesFiltro} />
+            <FiltroChips titulo="✨ Extras" opciones={OPCIONES_EXTRAS} seleccionados={extrasFiltro} onCambiar={setExtrasFiltro} />
           </ScrollView>
         )}
 
@@ -675,7 +558,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   panelFiltros: {
-    maxHeight: 280,
+    maxHeight: 360,
     backgroundColor: '#F8FAFC',
     borderRadius: 12,
     padding: 12,
@@ -694,39 +577,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2D3748',
   },
+  contadorFiltros: {
+    fontWeight: '400',
+    color: '#718096',
+  },
   textoLimpiar: {
     fontSize: 12,
     color: '#E53E3E',
-    fontWeight: '600',
-  },
-  labelFiltro: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4A5568',
-    marginTop: 8,
-    marginBottom: 6,
-  },
-  chipsContainer: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
-    backgroundColor: '#E2E8F0',
-    marginRight: 6,
-  },
-  chipSeleccionado: {
-    backgroundColor: '#3182CE',
-  },
-  chipTexto: {
-    fontSize: 11,
-    color: '#4A5568',
-    fontWeight: '500',
-  },
-  chipTextoSeleccionado: {
-    color: '#FFFFFF',
     fontWeight: '600',
   },
   selectorContainer: {

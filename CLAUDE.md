@@ -41,7 +41,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/supabase.ts`: cliente de Supabase (con adaptador de AsyncStorage seguro para el render estático).
 - `src/global.css`: fuentes y la grilla tipo Pinterest de la web (`#feria-masonry`).
 - `src/app/_layout.tsx`: layout raíz (Stack sin header, tema claro/oscuro, splash, Firebase).
-- `src/app/index.tsx`: **home** (~760 líneas): carga de ferias, filtros, lista/grilla y mapa.
+- `src/app/index.tsx`: **home** (~750 líneas): carga de ferias, filtros, lista/grilla y mapa.
+- `src/components/filtro-chips.tsx`: grupo de chips de filtro con título y selección múltiple (lo usan todos los filtros de la home).
 - `src/app/feria/[slug].tsx`: ficha de una feria (`/feria/<slug>`). Busca la feria en Supabase por `slug` (solo `activa = true`). `generateStaticParams` pide los slugs en el build y genera un HTML por feria.
 - `src/types/feria.ts`: tipo `Feria` (forma de una fila de la tabla).
 - Restos del template de Expo sin uso: `src/app/explore.tsx`, `src/components/app-tabs*`, `web-badge`, `hint-row`, `ui/collapsible`, `scripts/reset-project.js`, `README.md` genérico.
@@ -51,7 +52,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 ## 4. Datos (Supabase)
 - Tabla **`ferias`**. La home trae `select('*')` filtrando `activa = true`, ordenando por `orden` (ascendente, orden manual 1, 2, 3…) y después por `created_at` (descendente).
 - Campos que usa la app: `id`, `slug`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `observaciones` (texto libre opcional, ej. "Una vestuarista te asesora"; se muestra solo en la ficha, en un recuadro gris debajo de los datos, y no en la card para no alargarla), `modalidad[]`, `precio[]`, `tipo[]` (también incluye a quién va dirigida: "mujer", "hombre", "unisex"; la columna `genero` se borró el 2026-11-20), `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean; si es `true` se muestra el badge azul "🛍️ Compra ropa" en la card y en la ficha, y si es `false` o `null` no aparece nada; nunca mostrar "No compra"), `acepta_donaciones` (boolean, `not null default false`; si es `true` se muestra el badge rosa "🤝 Acepta donaciones" en la card y en la ficha, y si es `false` no aparece nada. El filtro de la home tiene "Todas" / "Acepta donaciones"), `acepta_cambios` (boolean, `not null default false`; igual que donaciones pero con badge naranja "🔄 Acepta cambios" y filtro "Todas" / "Acepta cambios"), `orden`, `activa`, `created_at`, `tamano` (enum `tamano_feria`: `normal` | `grande`, por defecto `normal`; en el Table Editor aparece como desplegable).
-- Valores fijos en los filtros: precios `$`…`$$$$$`; días en minúscula y **sin tilde** (`miercoles`, `sabado`); modalidades `Fija / Local`, `Showroom fijo`, `Itinerante`. Barrios y tipos salen de los datos.
+- Valores fijos en los filtros: precios `$`…`$$$$$`; días en minúscula y **sin tilde** (`miercoles`, `sabado`), aunque en los chips se muestran con mayúscula y tilde. Barrios, tipos y modalidades salen de los datos (todos los valores que aparezcan al menos una vez, en orden alfabético).
+- **Filtros de la home** (2026-11-20), en este orden: Día, Barrio, Precio, Estilo / Tipo, Modalidad y Extras (🛍️ Compra ropa, 🤝 Acepta donaciones, 🔄 Acepta cambios). Todos son de selección múltiple y no tienen chip "Todos": sin nada marcado no filtra, y tocar un chip marcado lo desmarca. Dentro de una categoría alcanza con una coincidencia (sábado **o** domingo); entre categorías se tienen que cumplir todas. Extras funciona igual: alcanza con que cumpla uno de los marcados (por decisión de Brian). No hay opción "No compra". El panel muestra cuántas ferias quedan, y el botón "Filtros (n)" cuenta los chips marcados. Los chips bajan de renglón en vez de deslizarse al costado.
 
 ---
 
@@ -107,7 +109,9 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
 
 **Pendientes detectados (sin prioridad todavía)**
-- Separar `index.tsx`: componente reutilizable de chips de filtro (hoy está copiado 5 veces), carga de datos en un hook.
+- Separar `index.tsx`: carga de datos en un hook.
+- Filtros en la URL (para compartir un link ya filtrado).
+- Separar "Tipo" en "A quién va dirigida" (mujer, hombre, unisex) y "Estilo": hoy elegir *mujer + vintage* trae las de mujer **o** vintage.
 - Limpiar restos del template y personalizar nombre, ícono y splash en `app.json`.
 
 ---
