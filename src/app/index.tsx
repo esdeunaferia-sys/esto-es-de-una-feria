@@ -67,6 +67,7 @@ export default function HomeScreen() {
   const [tipoFiltro, setTipoFiltro] = useState<string>('');
   const [modalidadFiltro, setModalidadFiltro] = useState<string>('');
   const [compraRopaFiltro, setCompraRopaFiltro] = useState<boolean | null>(null);
+  const [soloDonaciones, setSoloDonaciones] = useState(false);
 
   // Al abrir la home: `loading` ya arranca en true, y cuando llega la respuesta
   // guardamos las ferias y apagamos la ruedita.
@@ -124,9 +125,10 @@ export default function HomeScreen() {
       if (diaFiltro && (!f.dias_semana || !f.dias_semana.includes(diaFiltro.toLowerCase()))) return false;
       if (tipoFiltro && (!f.tipo || !f.tipo.includes(tipoFiltro))) return false;
       if (compraRopaFiltro !== null && f.compra_ropa !== compraRopaFiltro) return false;
+      if (soloDonaciones && f.acepta_donaciones !== true) return false;
       return true;
     });
-  }, [ferias, barrioFiltro, precioFiltro, diaFiltro, tipoFiltro, modalidadFiltro, compraRopaFiltro]);
+  }, [ferias, barrioFiltro, precioFiltro, diaFiltro, tipoFiltro, modalidadFiltro, compraRopaFiltro, soloDonaciones]);
 
   const totalFiltrosActivos = [
     barrioFiltro, 
@@ -134,7 +136,8 @@ export default function HomeScreen() {
     diaFiltro, 
     tipoFiltro,
     modalidadFiltro,
-    compraRopaFiltro !== null ? 'compraRopa' : ''
+    compraRopaFiltro !== null ? 'compraRopa' : '',
+    soloDonaciones ? 'donaciones' : '',
   ].filter(Boolean).length;
 
   const limpiarFiltros = () => {
@@ -144,6 +147,7 @@ export default function HomeScreen() {
     setTipoFiltro('');
     setModalidadFiltro('');
     setCompraRopaFiltro(null);
+    setSoloDonaciones(false);
   };
 
   const irADetalle = (feria: Feria) => {
@@ -283,10 +287,15 @@ export default function HomeScreen() {
           <Text style={[styles.nombreFeria, item.tamano === 'grande' && styles.nombreFeriaGrande]}>
             {item.nombre}
           </Text>
-          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+          <View style={styles.badgesCard}>
             {item.compra_ropa && (
               <View style={styles.badgeCompraRopa}>
                 <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
+              </View>
+            )}
+            {item.acepta_donaciones === true && (
+              <View style={styles.badgeDonaciones}>
+                <Text style={styles.badgeDonacionesText}>🤝 Acepta donaciones</Text>
               </View>
             )}
             {item.modalidad && item.modalidad.length > 0 && (
@@ -379,6 +388,23 @@ export default function HomeScreen() {
                 onPress={() => setCompraRopaFiltro(compraRopaFiltro === false ? null : false)}
               >
                 <Text style={[styles.chipTexto, compraRopaFiltro === false && styles.chipTextoSeleccionado]}>No compra</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Filtro: ¿Acepta donaciones? */}
+            <Text style={styles.labelFiltro}>🤝 ¿Acepta donaciones?</Text>
+            <View style={styles.chipsContainer}>
+              <TouchableOpacity
+                style={[styles.chip, !soloDonaciones && styles.chipSeleccionado]}
+                onPress={() => setSoloDonaciones(false)}
+              >
+                <Text style={[styles.chipTexto, !soloDonaciones && styles.chipTextoSeleccionado]}>Todas</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.chip, soloDonaciones && styles.chipSeleccionado]}
+                onPress={() => setSoloDonaciones(!soloDonaciones)}
+              >
+                <Text style={[styles.chipTexto, soloDonaciones && styles.chipTextoSeleccionado]}>Acepta donaciones</Text>
               </TouchableOpacity>
             </View>
 
@@ -758,6 +784,27 @@ const styles = StyleSheet.create({
   },
   nombreFeriaGrande: {
     fontSize: 22,
+  },
+  // Contenedor de badges de la card: si no entran en una línea, pasan a la siguiente
+  badgesCard: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 6,
+    flexShrink: 1,
+  },
+  badgeDonaciones: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#FFF5F7',
+    borderWidth: 1,
+    borderColor: '#FED7E2',
+  },
+  badgeDonacionesText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#B83280',
   },
   badgeCompraRopa: {
     paddingHorizontal: 8,

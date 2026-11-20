@@ -50,7 +50,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 
 ## 4. Datos (Supabase)
 - Tabla **`ferias`**. La home trae `select('*')` filtrando `activa = true`, ordenando por `orden` (ascendente, orden manual 1, 2, 3…) y después por `created_at` (descendente).
-- Campos que usa la app: `id`, `slug`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `modalidad[]`, `precio[]`, `tipo[]` (también incluye a quién va dirigida: "mujer", "hombre", "unisex"; ya no existe `genero`), `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean), `orden`, `activa`, `created_at`, `tamano` (enum `tamano_feria`: `normal` | `grande`, por defecto `normal`; en el Table Editor aparece como desplegable).
+- Campos que usa la app: `id`, `slug`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `modalidad[]`, `precio[]`, `tipo[]` (también incluye a quién va dirigida: "mujer", "hombre", "unisex"; la columna `genero` se borró el 2026-11-20), `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean), `acepta_donaciones` (boolean, `not null default false`; si es `true` se muestra el badge rosa "🤝 Acepta donaciones" en la card y en la ficha, y si es `false` no aparece nada. El filtro de la home tiene "Todas" / "Acepta donaciones"), `orden`, `activa`, `created_at`, `tamano` (enum `tamano_feria`: `normal` | `grande`, por defecto `normal`; en el Table Editor aparece como desplegable).
 - Valores fijos en los filtros: precios `$`…`$$$$$`; días en minúscula y **sin tilde** (`miercoles`, `sabado`); modalidades `Fija / Local`, `Showroom fijo`, `Itinerante`. Barrios y tipos salen de los datos.
 
 ---

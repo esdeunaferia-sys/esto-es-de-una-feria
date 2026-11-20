@@ -179,7 +179,9 @@ export default function FeriaScreen() {
           <View style={styles.tarjeta}>
             <Text style={styles.titulo}>{feria.nombre}</Text>
 
-            {(!!feria.modalidad?.length || feria.compra_ropa === true) && (
+            {(!!feria.modalidad?.length ||
+              feria.compra_ropa === true ||
+              feria.acepta_donaciones === true) && (
               <View style={styles.badges}>
                 {feria.modalidad && feria.modalidad.length > 0 && (
                   <View style={styles.badgeModalidad}>
@@ -189,6 +191,11 @@ export default function FeriaScreen() {
                 {feria.compra_ropa === true && (
                   <View style={styles.badgeCompraRopa}>
                     <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
+                  </View>
+                )}
+                {feria.acepta_donaciones === true && (
+                  <View style={styles.badgeDonaciones}>
+                    <Text style={styles.badgeDonacionesText}>🤝 Acepta donaciones</Text>
                   </View>
                 )}
               </View>
@@ -365,6 +372,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#234E52',
+  },
+  badgeDonaciones: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#FFF5F7',
+    borderWidth: 1,
+    borderColor: '#FED7E2',
+  },
+  badgeDonacionesText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#B83280',
   },
   badgeCompraRopa: {
     paddingHorizontal: 8,
