@@ -16,18 +16,9 @@ import { WebView } from 'react-native-webview';
 import { supabase } from '../supabase';
 import type { Feria } from '@/types/feria';
 import { FiltroChips, type OpcionFiltro } from '@/components/filtro-chips';
+import { DIAS_SEMANA, formatearDias } from '@/utils/dias';
 
-// Opciones fijas de los filtros. `valor` es como está en la base (días en
-// minúscula y sin tilde) y `etiqueta` es como se muestra.
-const OPCIONES_DIAS: OpcionFiltro[] = [
-  { valor: 'lunes', etiqueta: 'Lunes' },
-  { valor: 'martes', etiqueta: 'Martes' },
-  { valor: 'miercoles', etiqueta: 'Miércoles' },
-  { valor: 'jueves', etiqueta: 'Jueves' },
-  { valor: 'viernes', etiqueta: 'Viernes' },
-  { valor: 'sabado', etiqueta: 'Sábado' },
-  { valor: 'domingo', etiqueta: 'Domingo' },
-];
+// Opciones fijas de los filtros (los días vienen de src/utils/dias.ts)
 const OPCIONES_PRECIOS = comoOpciones(['$', '$$', '$$$', '$$$$', '$$$$$']);
 // Los "sí/no" de la feria. El valor es el nombre de la columna en Supabase.
 const OPCIONES_EXTRAS: OpcionFiltro[] = [
@@ -45,6 +36,13 @@ function comoOpciones(valores: string[]): OpcionFiltro[] {
 function ordenarAlfabetico(valores: (string | null | undefined)[]): string[] {
   const unicos = Array.from(new Set(valores.filter((v): v is string => !!v)));
   return unicos.sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+// "Lunes a viernes • 10 a 19 hs". Si la feria no tiene días fijos, usa la
+// observación de días (ej: "Solo en fechas especiales"). Solo lo que haya.
+function cuandoAbre(f: Feria): string {
+  const dias = formatearDias(f.dias_semana) || f.observaciones_dias?.trim();
+  return [dias, f.horario?.trim()].filter(Boolean).join(' • ');
 }
 
 // ¿La feria tiene alguna de las opciones marcadas? Si no hay nada marcado, pasa.
@@ -207,7 +205,7 @@ export default function HomeScreen() {
     slug: f.slug,
     nombre: f.nombre,
     lugar: [f.direccion, f.barrio ? `(${f.barrio})` : ''].filter(Boolean).join(' '),
-    cuando: [(f.dias_semana || []).join(', '), f.horario].filter(Boolean).join(' • '),
+    cuando: cuandoAbre(f),
     foto: f.foto_perfil,
     lat: f.lat,
     lng: f.lng,
@@ -353,9 +351,7 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.infoText}>📍 {item.direccion} ({item.barrio})</Text>
-        <Text style={styles.infoText}>
-          🗓️ {(item.dias_semana || []).join(', ')} • 🕒 {item.horario}
-        </Text>
+        {cuandoAbre(item) ? <Text style={styles.infoText}>🗓️ {cuandoAbre(item)}</Text> : null}
         {item.precio && item.precio.length > 0 && (
           <Text style={styles.infoText}>🏷️ Precios: {item.precio.join(', ')}</Text>
         )}
@@ -439,7 +435,7 @@ export default function HomeScreen() {
               )}
             </View>
 
-            <FiltroChips titulo="🗓️ Día" opciones={OPCIONES_DIAS} seleccionados={diasFiltro} onCambiar={setDiasFiltro} />
+            <FiltroChips titulo="🗓️ Día" opciones={DIAS_SEMANA} seleccionados={diasFiltro} onCambiar={setDiasFiltro} />
             <FiltroChips titulo="📍 Barrio" opciones={opcionesBarrios} seleccionados={barriosFiltro} onCambiar={setBarriosFiltro} />
             <FiltroChips titulo="🏷️ Precio" opciones={OPCIONES_PRECIOS} seleccionados={preciosFiltro} onCambiar={setPreciosFiltro} />
             <FiltroChips titulo="🎨 Estilo / Tipo" opciones={opcionesTipos} seleccionados={tiposFiltro} onCambiar={setTiposFiltro} />

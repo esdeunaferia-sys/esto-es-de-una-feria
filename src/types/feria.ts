@@ -9,7 +9,7 @@ export type Feria = {
   barrio: string;
   direccion: string;
   dias_semana: string[] | null;
-  horario: string;
+  horario: string | null;
   observaciones_dias: string | null;
   // Texto libre con datos extra (ej: "Una vestuarista te asesora").
   // Puede faltar si la columna todavía no existe.

@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { supabase } from '@/supabase';
 import type { Feria } from '@/types/feria';
+import { formatearDias } from '@/utils/dias';
 
 // Se ejecuta UNA vez, cuando Vercel arma el sitio (no en el navegador).
 // Le pide a Supabase la lista de ferias activas y Expo genera un HTML
@@ -111,7 +112,7 @@ export default function FeriaScreen() {
   ];
   const fotoActiva = fotoElegida ?? todasLasFotos[0] ?? null;
 
-  const dias = (feria.dias_semana ?? []).join(', ');
+  const dias = formatearDias(feria.dias_semana);
   const diasYHorario = [dias, feria.horario].filter(Boolean).join(' • ');
   const precio = (feria.precio ?? []).join(' ');
   const etiquetas = feria.tipo ?? [];
