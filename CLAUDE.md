@@ -73,8 +73,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
   1. **Imagen superior:** 100% de ancho, alto fijo de 160px (**320px** si la feria tiene `tamano = 'grande'`, para destacarla; el nombre también pasa de 18 a 22). Mismo ancho que las demás, para no romper la grilla tipo Pinterest. Sin badge de "Destacada": por decisión de producto, se distingue solo por el tamaño.
   2. **Cabecera:** nombre en negrita + badges ("🛍️ Compra ropa" y modalidad).
   3. **Metadatos con íconos:** dirección (barrio), días • horario, precios.
-  4. **Tags:** chips grises con los tipos.
-  5. **Pie de contacto:** Instagram a la izquierda, WhatsApp a la derecha.
+  4. **Tags:** chips grises con los tipos (solo si hay).
+  - Sin Instagram ni WhatsApp (se sacaron el 2026-11-20: eran texto que no se podía tocar y la card entera ya lleva a la ficha, donde están como botones). Si la feria no tiene tipos, no queda el espacio vacío de los chips.
 - **Ficha de feria (`/feria/[slug]`):** fondo `#F5F5F7`, columna centrada con `maxWidth: 720`. Arriba "← Volver" en texto azul. Foto principal 4:3 con radio 12 y miniaturas (portada + galería). Tarjeta blanca con la misma sombra que las cards: nombre, badges, datos con íconos, `observaciones_dias` y chips de tipo. Botones de Instagram y WhatsApp lado a lado.
 - **Fotos:** se suben a Supabase Storage (bucket `fotos-feria`) **en WebP, máx. 1200px de ancho, calidad ~75** (100–200 KB). Nombre: `<slug>-<n>.webp`, donde 1 = portada. Nunca subir fotos en PNG: pesan 5 a 10 veces más.
 - Paleta actual: azul `#3182CE` para acciones/chips activos, grises tipo Tailwind (`#2D3748`, `#4A5568`, `#718096`, `#E2E8F0`).

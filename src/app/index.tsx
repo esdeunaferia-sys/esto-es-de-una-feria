@@ -359,16 +359,14 @@ export default function HomeScreen() {
             <Text style={styles.infoText}>🏷️ Precios: {item.precio.join(', ')}</Text>
           )}
 
-          <View style={styles.tagsContainer}>
-            {(item.tipo || []).map((tipo, index) => (
-              <View key={`${tipo}-${index}`} style={styles.tag}><Text style={styles.tagText}>{tipo}</Text></View>
-            ))}
-          </View>
-
-          <View style={styles.contactoContainer}>
-            {item.instagram && <Text style={styles.contactoText}>📸 {item.instagram}</Text>}
-            {item.whatsapp && <Text style={styles.contactoText}>💬 {item.whatsapp}</Text>}
-          </View>
+          {/* El Instagram y el WhatsApp no van en la card: están como botones en la ficha */}
+          {item.tipo && item.tipo.length > 0 && (
+            <View style={styles.tagsContainer}>
+              {item.tipo.map((tipo, index) => (
+                <View key={`${tipo}-${index}`} style={styles.tag}><Text style={styles.tagText}>{tipo}</Text></View>
+              ))}
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     </Link>
@@ -818,7 +816,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
     marginTop: 8,
-    marginBottom: 12,
   },
   tag: {
     backgroundColor: '#EDF2F7',
@@ -830,18 +827,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#4A5568',
     fontWeight: '600',
-  },
-  contactoContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#EDF2F7',
-  },
-  contactoText: {
-    fontSize: 12,
-    color: '#3182CE',
-    fontWeight: '500',
   },
   mapa: {
     flex: 1,
