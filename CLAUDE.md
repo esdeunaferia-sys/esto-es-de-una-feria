@@ -47,7 +47,10 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/app/+not-found.tsx`: página "No encontramos esta página" (con botón a la home) para cualquier dirección que no existe. Se publica como `404.html`.
 - `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, el título y la descripción generales del sitio, las etiquetas `og:` para la vista previa al compartir y `theme-color`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58).
 - `src/app/_layout.tsx`: layout raíz (Stack sin header, siempre tema claro, Firebase).
-- `src/app/index.tsx`: **home** (~500 líneas): carga de ferias, filtros, encabezado, y elige entre lista/grilla y mapa.
+- `src/app/index.tsx`: **home** (~160 líneas, casi todo estilos): usa `useFerias` y `useFiltros`, muestra `EncabezadoHome` y elige entre lista/grilla de `FeriaCard` y `MapaFerias`. La vista (lista/mapa) vive en la URL.
+- `src/hooks/use-ferias.ts`: trae las ferias activas de Supabase (`pedirFerias()`); devuelve `ferias`, `cargando`, `refrescando` y `refrescar` (deslizar para refrescar en el celu).
+- `src/hooks/use-filtros.ts`: todo lo de los filtros: qué está marcado (un solo estado con las 6 categorías), las opciones de cada grupo, `feriasFiltradas`, `totalActivos`, `limpiar` y si el panel está abierto. Para sumar un filtro nuevo se agrega su grupo en `definiciones`.
+- `src/components/encabezado-home.tsx`: título, "¡Sumá tu feria!", botón y panel de filtros, y Lista/Mapa.
 - `src/components/feria-card.tsx`: la card de una feria en la home (link a la ficha, foto, nombre, badges, datos y chips de tipo), con sus estilos.
 - `src/components/mapa-ferias.web.tsx` / `mapa-ferias.tsx` / `mapa-html.ts`: el mapa (ver sección 2).
 - `src/components/badges-feria.tsx`: los badges de una feria (🛍️ Compra ropa → 🤝 Acepta donaciones → 🔄 Acepta cambios → modalidad), compartidos por la card (`tamano="chico"`) y la ficha. Para sumar un badge nuevo se agrega en un solo lugar.
@@ -110,7 +113,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - Rutas de detalle `/feria/[slug]` (2026-11-19): columna `slug` en Supabase (obligatoria, única y con formato `minusculas-con-guiones`, chequeado por la base). Una página estática por feria generada en el build. Se borró `detalle.tsx`. Se agregó `vercel.json` con `cleanUrls: true` (sin eso Vercel solo servía `/feria/x.html` y `/feria/x` daba 404 al abrir un link directo). En la ficha, `compra_ropa = null` ya no se muestra.
 
 - Redeploy automático (2026-11-19): las páginas de feria solo existen para los slugs que había al momento del build. Por eso hay un *Database Webhook* en Supabase (`rearmar_sitio_vercel`, tabla `ferias`, Insert/Update/Delete, POST) que llama a un *Deploy Hook* de Vercel (`supabase-ferias`, rama `main`). Cualquier cambio en la tabla rearma el sitio en ~2 minutos. La URL del hook es secreta: vive solo en Supabase, nunca en el repo. Al cargar una feria a mano, completar `slug`.
-- ESLint configurado (`eslint.config.js`, `eslint-config-expo`) y sin errores (2026-11-19). Ojo con la regla `react-hooks/set-state-in-effect`: dentro de un `useEffect` no llamar funciones que cambian el estado antes de un `await`. Patrón usado: una función que solo trae datos (`pedirFerias()` en `index.tsx`) y el `setState` dentro del `.then(...)`.
+- ESLint configurado (`eslint.config.js`, `eslint-config-expo`) y sin errores (2026-11-19). Ojo con la regla `react-hooks/set-state-in-effect`: dentro de un `useEffect` no llamar funciones que cambian el estado antes de un `await`. Patrón usado: una función que solo trae datos (`pedirFerias()` en `src/hooks/use-ferias.ts`) y el `setState` dentro del `.then(...)`.
 - Fotos comprimidas (2026-11-20): las 19 fotos pasaron de PNG/JPG a WebP (de 6,3 MB a 0,9 MB). Las originales siguen en Storage como respaldo: borrarlas cuando se confirme que todo anda bien. Algunas originales son chicas (ej. Monogatari galería 322×441, Misericordia 442×342) y conviene reemplazarlas por versiones más grandes.
 - Rediseño de la ficha (2026-11-20): columna centrada de 720px, ver sección 5.
 - Globito del mapa con foto y botón a la ficha, y textos escapados (2026-11-20). Ver sección 2.
@@ -123,11 +126,12 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 
 - Sitemap, robots.txt y página 404 propia (2026-11-20). Ver sección 2, Hosting.
 
+- `index.tsx` separado en partes (2026-11-20): badges compartidos, card, mapa (web/celu), hooks de datos y filtros, y encabezado. Pasó de ~830 a ~160 líneas. Ver sección 3.
+
 **Próximo**
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
 
 **Pendientes detectados (sin prioridad todavía)**
-- Separar `index.tsx`: carga de datos en un hook.
 - Filtros en la URL (para compartir un link ya filtrado).
 - Separar "Tipo" en "A quién va dirigida" (mujer, hombre, unisex) y "Estilo": hoy elegir *mujer + vintage* trae las de mujer **o** vintage.
 - Personalizar nombre, ícono, favicon y splash en `app.json` (siguen los de Expo).

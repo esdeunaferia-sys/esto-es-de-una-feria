@@ -1,5 +1,4 @@
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   FlatList,
@@ -8,261 +7,53 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../supabase';
-import type { Feria } from '@/types/feria';
+
+import { EncabezadoHome, type Vista } from '@/components/encabezado-home';
 import { FeriaCard } from '@/components/feria-card';
 import { MapaFerias } from '@/components/mapa-ferias';
-import { FiltroChips, type OpcionFiltro } from '@/components/filtro-chips';
-import { DIAS_SEMANA } from '@/utils/dias';
+import { useFerias } from '@/hooks/use-ferias';
+import { useFiltros } from '@/hooks/use-filtros';
 
-// Opciones fijas de los filtros (los días vienen de src/utils/dias.ts)
-const OPCIONES_PRECIOS = comoOpciones(['$', '$$', '$$$', '$$$$', '$$$$$']);
-// Los "sí/no" de la feria. El valor es el nombre de la columna en Supabase.
-const OPCIONES_EXTRAS: OpcionFiltro[] = [
-  { valor: 'compra_ropa', etiqueta: '🛍️ Compra ropa' },
-  { valor: 'acepta_donaciones', etiqueta: '🤝 Acepta donaciones' },
-  { valor: 'acepta_cambios', etiqueta: '🔄 Acepta cambios' },
-];
-
-// Para opciones donde lo que se muestra es igual a lo que está en la base
-function comoOpciones(valores: string[]): OpcionFiltro[] {
-  return valores.map((valor) => ({ valor, etiqueta: valor }));
-}
-
-// Saca vacíos y repetidos, y ordena alfabéticamente (respetando tildes)
-function ordenarAlfabetico(valores: (string | null | undefined)[]): string[] {
-  const unicos = Array.from(new Set(valores.filter((v): v is string => !!v)));
-  return unicos.sort((a, b) => a.localeCompare(b, 'es'));
-}
-
-// ¿La feria tiene alguna de las opciones marcadas? Si no hay nada marcado, pasa.
-function coincideAlguna(marcados: string[], valoresDeLaFeria: (string | null)[] | null): boolean {
-  if (marcados.length === 0) return true;
-  return marcados.some((m) => valoresDeLaFeria?.includes(m) ?? false);
-}
-
-// Pide las ferias activas a Supabase. Solo trae los datos (no toca el estado
-// de la pantalla): devuelve la lista, o null si algo falló.
-async function pedirFerias(): Promise<Feria[] | null> {
-  try {
-    const { data, error } = await supabase
-      .from('ferias')
-      .select('*')
-      .eq('activa', true)
-      .order('orden', { ascending: true }) // <-- Ordena por tu número personalizado (1, 2, 3...)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error al cargar ferias:', error.message);
-      return null;
-    }
-    return (data ?? []) as Feria[];
-  } catch (err) {
-    console.error('Error de conexión:', err);
-    return null;
-  }
-}
-
+// La home: trae las ferias, aplica los filtros y muestra el encabezado con la lista
+// (grilla en la web) o el mapa. Cada parte vive en su archivo:
+//   datos → hooks/use-ferias.ts         filtros → hooks/use-filtros.ts
+//   encabezado → components/encabezado-home.tsx
+//   card → components/feria-card.tsx    mapa → components/mapa-ferias(.web).tsx
 export default function HomeScreen() {
   const router = useRouter();
-  const [ferias, setFerias] = useState<Feria[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refrescando, setRefrescando] = useState(false); // deslizar para refrescar (celu)
+  const { ferias, cargando, refrescando, refrescar } = useFerias();
+  const filtros = useFiltros(ferias);
+  const { feriasFiltradas } = filtros;
+
   // La vista (lista o mapa) se guarda en la URL (/?vista=mapa). Así, al volver
   // de una ficha, al recargar o al compartir el link, se mantiene la vista elegida.
   const { vista } = useLocalSearchParams<{ vista?: string }>();
-  const vistaActual: 'lista' | 'mapa' = vista === 'mapa' ? 'mapa' : 'lista';
-  const setVistaActual = (nueva: 'lista' | 'mapa') => {
+  const vistaActual: Vista = vista === 'mapa' ? 'mapa' : 'lista';
+  const cambiarVista = (nueva: Vista) => {
     router.setParams({ vista: nueva === 'mapa' ? 'mapa' : undefined });
-  };
-
-  // Estados de Filtro
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
-  // Cada filtro guarda la lista de opciones marcadas. Lista vacía = no filtra.
-  const [diasFiltro, setDiasFiltro] = useState<string[]>([]);
-  const [barriosFiltro, setBarriosFiltro] = useState<string[]>([]);
-  const [preciosFiltro, setPreciosFiltro] = useState<string[]>([]);
-  const [tiposFiltro, setTiposFiltro] = useState<string[]>([]);
-  const [modalidadesFiltro, setModalidadesFiltro] = useState<string[]>([]);
-  const [extrasFiltro, setExtrasFiltro] = useState<string[]>([]);
-
-  // Al abrir la home: `loading` ya arranca en true, y cuando llega la respuesta
-  // guardamos las ferias y apagamos la ruedita.
-  useEffect(() => {
-    pedirFerias().then((lista) => {
-      if (lista) setFerias(lista);
-      setLoading(false);
-    });
-  }, []);
-
-  // Deslizar hacia abajo para refrescar (solo en el celu)
-  const refrescarFerias = async () => {
-    setRefrescando(true);
-    const lista = await pedirFerias();
-    if (lista) setFerias(lista); // si falló, dejamos las que ya estaban
-    setRefrescando(false);
-  };
-
-  // Opciones de barrio, tipo y modalidad: salen de los datos, sin repetir y en orden alfabético
-  const opcionesBarrios = useMemo(
-    () => comoOpciones(ordenarAlfabetico(ferias.map((f) => f.barrio))),
-    [ferias],
-  );
-  const opcionesTipos = useMemo(
-    () => comoOpciones(ordenarAlfabetico(ferias.flatMap((f) => f.tipo || []))),
-    [ferias],
-  );
-  const opcionesModalidades = useMemo(
-    () => comoOpciones(ordenarAlfabetico(ferias.flatMap((f) => f.modalidad || []))),
-    [ferias],
-  );
-
-  // Filtrado de ferias.
-  // Dentro de una categoría alcanza con que coincida UNA opción (sábado o domingo).
-  // Entre categorías tienen que cumplirse TODAS (sábado o domingo, y además en Palermo).
-  const feriasFiltradas = useMemo(() => {
-    return ferias.filter((f) => {
-      if (!coincideAlguna(diasFiltro, f.dias_semana)) return false;
-      if (!coincideAlguna(barriosFiltro, [f.barrio])) return false;
-      if (!coincideAlguna(preciosFiltro, f.precio)) return false;
-      if (!coincideAlguna(tiposFiltro, f.tipo)) return false;
-      if (!coincideAlguna(modalidadesFiltro, f.modalidad)) return false;
-      // Extras: igual que el resto, alcanza con que cumpla UNO de los marcados
-      const extrasDeLaFeria = [
-        f.compra_ropa === true ? 'compra_ropa' : null,
-        f.acepta_donaciones === true ? 'acepta_donaciones' : null,
-        f.acepta_cambios === true ? 'acepta_cambios' : null,
-      ];
-      if (!coincideAlguna(extrasFiltro, extrasDeLaFeria)) return false;
-      return true;
-    });
-  }, [ferias, diasFiltro, barriosFiltro, preciosFiltro, tiposFiltro, modalidadesFiltro, extrasFiltro]);
-
-  // Cantidad de chips marcados en total (se muestra en el botón "Filtros")
-  const totalFiltrosActivos =
-    diasFiltro.length +
-    barriosFiltro.length +
-    preciosFiltro.length +
-    tiposFiltro.length +
-    modalidadesFiltro.length +
-    extrasFiltro.length;
-
-  const limpiarFiltros = () => {
-    setDiasFiltro([]);
-    setBarriosFiltro([]);
-    setPreciosFiltro([]);
-    setTiposFiltro([]);
-    setModalidadesFiltro([]);
-    setExtrasFiltro([]);
   };
 
   const emptyList = (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTexto}>No encontramos ferias que coincidan con esos filtros.</Text>
-      <TouchableOpacity style={styles.botonLimpiarEmpty} onPress={limpiarFiltros}>
+      <TouchableOpacity style={styles.botonLimpiarEmpty} onPress={filtros.limpiar}>
         <Text style={styles.textoLimpiarEmpty}>Limpiar filtros</Text>
       </TouchableOpacity>
     </View>
   );
 
-  // Encabezado: título, Sumá tu feria, filtros y Lista/Mapa. En la vista Lista va
-  // adentro de lo que se scrollea (así en el celu no ocupa media pantalla todo el
-  // tiempo); en la vista Mapa queda fijo arriba, porque el mapa no se scrollea.
+  // En la vista Lista el encabezado va adentro de lo que se scrollea (así en el celu
+  // no ocupa media pantalla todo el tiempo); en la vista Mapa queda fijo arriba.
   const encabezado = (
-    <View style={styles.header}>
-      {/* Encabezado. En el celu va todo centrado y en columna: título, "Sumá tu
-          feria" y filtros. En la compu (web, desde 768px) src/global.css lo pasa a
-          una fila: filtros a la izquierda, título al medio y "Sumá tu feria" a la
-          derecha. Los nativeID son los que usa ese CSS. */}
-      <View style={styles.headerTop} nativeID="encabezado">
-        <View style={styles.headerTitulo} nativeID="encabezado-titulo">
-          <Text style={styles.tituloApp}>{'Esto es de\nuna feria'}</Text>
-          <Text style={styles.lema}>• Todos tienen derecho a vestirse increíble •</Text>
-          <Text style={styles.subtitulo}>
-            🪞Guía de ferias americanas por{' '}
-            {/* En la web es un <a> de verdad; en el celu abre Instagram */}
-            <Link href="https://instagram.com/estoesdeunaferia" target="_blank" style={styles.linkInstagram}>
-              @estoesdeunaferia
-            </Link>
-          </Text>
-        </View>
-
-        <View style={styles.encabezadoSumar} nativeID="encabezado-sumar">
-          <Link href="https://forms.gle/hrpUULd6UGmay2JC9" target="_blank" style={styles.linkSumarFeria}>
-            ¡Sumá tu feria!
-          </Link>
-        </View>
-
-        <View style={styles.encabezadoFiltros} nativeID="encabezado-filtros">
-          <TouchableOpacity
-            style={[styles.botonFiltroToggle, totalFiltrosActivos > 0 && styles.botonFiltroActivo]}
-            onPress={() => setMostrarFiltros(!mostrarFiltros)}
-          >
-            <Text style={[styles.textoBotonFiltro, totalFiltrosActivos > 0 && styles.textoBotonFiltroActivo]}>
-              🔍 Filtrar ferias{totalFiltrosActivos > 0 ? ` (${totalFiltrosActivos})` : ''} {mostrarFiltros ? '▴' : '▾'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Panel Desplegable de Filtros */}
-      {mostrarFiltros && (
-        <ScrollView
-          style={[styles.panelFiltros, vistaActual === 'mapa' && styles.panelFiltrosMapa]}
-          nestedScrollEnabled
-        >
-          <View style={styles.headerFiltros}>
-            <Text style={styles.tituloFiltros}>
-              Filtrar ferias{' '}
-              <Text style={styles.contadorFiltros}>
-                · {feriasFiltradas.length} {feriasFiltradas.length === 1 ? 'feria' : 'ferias'}
-              </Text>
-            </Text>
-            {totalFiltrosActivos > 0 && (
-              <TouchableOpacity onPress={limpiarFiltros}>
-                <Text style={styles.textoLimpiar}>Limpiar todos</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <FiltroChips titulo="🗓️ Día" opciones={DIAS_SEMANA} seleccionados={diasFiltro} onCambiar={setDiasFiltro} />
-          <FiltroChips titulo="📍 Barrio" opciones={opcionesBarrios} seleccionados={barriosFiltro} onCambiar={setBarriosFiltro} />
-          <FiltroChips titulo="🏷️ Precio" opciones={OPCIONES_PRECIOS} seleccionados={preciosFiltro} onCambiar={setPreciosFiltro} />
-          <FiltroChips titulo="🎨 Estilo / Tipo" opciones={opcionesTipos} seleccionados={tiposFiltro} onCambiar={setTiposFiltro} />
-          <FiltroChips titulo="🏢 Modalidad" opciones={opcionesModalidades} seleccionados={modalidadesFiltro} onCambiar={setModalidadesFiltro} />
-          <FiltroChips titulo="✨ Extras" opciones={OPCIONES_EXTRAS} seleccionados={extrasFiltro} onCambiar={setExtrasFiltro} />
-        </ScrollView>
-      )}
-
-      {/* Selector de Vista (Lista / Mapa) */}
-      <View style={styles.selectorContainer}>
-        <TouchableOpacity 
-          style={[styles.botonSelector, vistaActual === 'lista' && styles.botonActivo]}
-          onPress={() => setVistaActual('lista')}
-        >
-          <Text style={[styles.textoSelector, vistaActual === 'lista' && styles.textoActivo]}>
-            📋 Lista ({feriasFiltradas.length})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.botonSelector, vistaActual === 'mapa' && styles.botonActivo]}
-          onPress={() => setVistaActual('mapa')}
-        >
-          <Text style={[styles.textoSelector, vistaActual === 'mapa' && styles.textoActivo]}>
-            🗺️ Mapa
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <EncabezadoHome filtros={filtros} vista={vistaActual} onCambiarVista={cambiarVista} />
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      {loading ? (
+      {cargando ? (
         // Mientras carga Supabase
         <>
           {encabezado}
@@ -294,7 +85,7 @@ export default function HomeScreen() {
             ListHeaderComponent={encabezado}
             ListHeaderComponentStyle={styles.encabezadoLista}
             contentContainerStyle={styles.listaNativa}
-            onRefresh={refrescarFerias}
+            onRefresh={refrescar}
             refreshing={refrescando}
             ListEmptyComponent={emptyList}
             renderItem={({ item }) => (
@@ -319,136 +110,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F7',
-  },
-  header: {
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-  },
-  headerTop: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    marginBottom: 12,
-  },
-  headerTitulo: {
-    alignItems: 'center',
-  },
-  tituloApp: {
-    fontSize: 28,
-    lineHeight: 32,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    textAlign: 'center',
-  },
-  lema: {
-    fontSize: 13,
-    fontStyle: 'italic',
-    color: '#4A5568',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  subtitulo: {
-    fontSize: 12,
-    color: '#7F8C8D',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  linkInstagram: {
-    color: '#3182CE',
-    fontWeight: '600',
-  },
-  botonFiltroToggle: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 24,
-    backgroundColor: '#EBF8FF',
-    borderWidth: 1.5,
-    borderColor: '#3182CE',
-  },
-  encabezadoSumar: {
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  linkSumarFeria: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#3182CE',
-  },
-  encabezadoFiltros: {
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  botonFiltroActivo: {
-    backgroundColor: '#3182CE',
-  },
-  textoBotonFiltro: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#2B6CB0',
-  },
-  textoBotonFiltroActivo: {
-    color: '#FFFFFF',
-  },
-  panelFiltros: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  // En el Mapa el encabezado no se scrollea: el panel se limita y se scrollea por dentro
-  panelFiltrosMapa: {
-    maxHeight: 360,
-  },
-  headerFiltros: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  tituloFiltros: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2D3748',
-  },
-  contadorFiltros: {
-    fontWeight: '400',
-    color: '#718096',
-  },
-  textoLimpiar: {
-    fontSize: 12,
-    color: '#E53E3E',
-    fontWeight: '600',
-  },
-  selectorContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#EDF2F7',
-    borderRadius: 10,
-    padding: 4,
-    // En el celu ocupa todo el ancho; en pantallas grandes se queda en 360px, centrada
-    width: '100%',
-    maxWidth: 360,
-    alignSelf: 'center',
-  },
-  botonSelector: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  botonActivo: {
-    backgroundColor: '#FFFFFF',
-    elevation: 2,
-  },
-  textoSelector: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#718096',
-  },
-  textoActivo: {
-    color: '#2C3E50',
   },
   loadingContainer: {
     flex: 1,
