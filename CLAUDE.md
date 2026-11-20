@@ -27,7 +27,7 @@
 - **Analíticas:** **Firebase Analytics** (SDK modular `firebase`), solo tráfico general/MAU.
   - Inicializado en `/firebaseConfig.js` validando `isSupported()` antes de `getAnalytics(app)`.
   - Importado globalmente en `src/app/_layout.tsx`.
-- **Mapa:** Leaflet + OpenStreetMap, armado como un HTML en texto dentro de `index.tsx` y mostrado con `<iframe>` en web y `react-native-webview` en el celu.. (`react-native-maps` se desinstaló porque no se usaba).
+- **Mapa:** Leaflet + OpenStreetMap, armado como un HTML en texto por `armarHtmlMapa()` en `src/components/mapa-html.ts`. Se muestra con el componente `MapaFerias`, que tiene dos versiones y Expo elige sola según la plataforma: `mapa-ferias.web.tsx` (`<iframe>`) y `mapa-ferias.tsx` (`react-native-webview`, celu).. (`react-native-maps` se desinstaló porque no se usaba).
   - Encuadre automático: `fitBounds` con todos los pines (margen 40px, zoom máx. 15). Con una sola feria, zoom 15 sobre ella; sin ninguna, centro de Buenos Aires con zoom 12. Como el HTML del mapa se rearma al cambiar los filtros, siempre encuadra las ferias que quedaron.
   - Globito de cada pin: foto de portada, nombre, dirección, días/horario y botón "Ver feria →". Se arma con `textContent`, nunca concatenando HTML, y el JSON se inyecta con `<` escapado.
   - Para abrir la ficha, el mapa manda un mensaje `{ tipo: 'abrir-feria', slug }`: en la web con `window.parent.postMessage` (la home lo acepta solo si viene de su propio iframe) y en el celu con `window.ReactNativeWebView.postMessage` (`onMessage` del WebView). La home navega con `router.push`.
@@ -47,8 +47,9 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/app/+not-found.tsx`: página "No encontramos esta página" (con botón a la home) para cualquier dirección que no existe. Se publica como `404.html`.
 - `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, el título y la descripción generales del sitio, las etiquetas `og:` para la vista previa al compartir y `theme-color`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58).
 - `src/app/_layout.tsx`: layout raíz (Stack sin header, siempre tema claro, Firebase).
-- `src/app/index.tsx`: **home** (~660 líneas): carga de ferias, filtros, encabezado, lista/grilla y mapa.
+- `src/app/index.tsx`: **home** (~500 líneas): carga de ferias, filtros, encabezado, y elige entre lista/grilla y mapa.
 - `src/components/feria-card.tsx`: la card de una feria en la home (link a la ficha, foto, nombre, badges, datos y chips de tipo), con sus estilos.
+- `src/components/mapa-ferias.web.tsx` / `mapa-ferias.tsx` / `mapa-html.ts`: el mapa (ver sección 2).
 - `src/components/badges-feria.tsx`: los badges de una feria (🛍️ Compra ropa → 🤝 Acepta donaciones → 🔄 Acepta cambios → modalidad), compartidos por la card (`tamano="chico"`) y la ficha. Para sumar un badge nuevo se agrega en un solo lugar.
 - `src/components/filtro-chips.tsx`: grupo de chips de filtro con título y selección múltiple (lo usan todos los filtros de la home).
 - `src/app/feria/[slug].tsx`: ficha de una feria (`/feria/<slug>`). Busca la feria en Supabase por `slug` (solo `activa = true`). `generateStaticParams` pide los slugs en el build y genera un HTML por feria.
