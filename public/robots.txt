@@ -1,0 +1,5 @@
+# Todo el sitio se puede indexar. Abajo, la lista de páginas para los buscadores.
+User-agent: *
+Allow: /
+
+Sitemap: https://www.estoesdeunaferia.com.ar/sitemap.xml

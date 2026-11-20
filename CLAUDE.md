@@ -30,7 +30,10 @@
 - **Mapa:** Leaflet + OpenStreetMap, armado como un HTML en texto dentro de `index.tsx` y mostrado con `<iframe>` en web y `react-native-webview` en el celu.. (`react-native-maps` se desinstaló porque no se usaba).
   - Globito de cada pin: foto de portada, nombre, dirección, días/horario y botón "Ver feria →". Se arma con `textContent`, nunca concatenando HTML, y el JSON se inyecta con `<` escapado.
   - Para abrir la ficha, el mapa manda un mensaje `{ tipo: 'abrir-feria', slug }`: en la web con `window.parent.postMessage` (la home lo acepta solo si viene de su propio iframe) y en el celu con `window.ReactNativeWebView.postMessage` (`onMessage` del WebView). La home navega con `router.push`.
-- **Hosting y CI/CD:** Repo en **GitHub** conectado a **Vercel**. Cada `git push` dispara el build estático y publica en `estoesdeunaferia.com.ar`.
+- **Hosting y CI/CD:** Repo en **GitHub** conectado a **Vercel**. Cada `git push` dispara el build estático y publica en `estoesdeunaferia.com.ar` (que redirige a `www.`, el dominio principal).
+  - `vercel.json` fija `buildCommand: npm run build` y `outputDirectory: dist`, más `cleanUrls: true`. `npm run build` = `expo export -p web` + `scripts/despues-del-build.js`, que agrega `dist/404.html` (copia de `+not-found.html`) y `dist/sitemap.xml` (home + una entrada por feria activa, pedidas a Supabase). Si el script falla, el build se corta y Vercel deja publicada la versión anterior.
+  - `public/robots.txt` (Expo lo copia tal cual a `dist/`) apunta al sitemap.
+  - En `app.json`, el plugin `expo-router` tiene `sitemap: false` para no publicar la página `/_sitemap` de Expo.
 
 ---
 
@@ -40,6 +43,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `firebaseConfig.js`: inicialización de Firebase App y Analytics.
 - `src/supabase.ts`: cliente de Supabase (con adaptador de AsyncStorage seguro para el render estático).
 - `src/global.css`: fuentes y la grilla tipo Pinterest de la web (`#feria-masonry`).
+- `src/app/+not-found.tsx`: página "No encontramos esta página" (con botón a la home) para cualquier dirección que no existe. Se publica como `404.html`.
 - `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, el título y la descripción generales del sitio, las etiquetas `og:` para la vista previa al compartir y `theme-color`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58).
 - `src/app/_layout.tsx`: layout raíz (Stack sin header, tema claro/oscuro, splash, Firebase).
 - `src/app/index.tsx`: **home** (~750 líneas): carga de ferias, filtros, lista/grilla y mapa.
@@ -80,7 +84,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - **Servidor de desarrollo:** `npx expo start --port 8082` → `http://localhost:8082` (o `w` en la terminal de Expo).
   - En Brave, desactivar los Shields para verificar Firebase Analytics en local.
   - **Es lento a propósito, no sirve para medir velocidad.** Arma cada página en el momento (4–10 s por pedido) y manda ~8 MB de JS sin comprimir. Después de cada cambio en el código recompila todo, y mientras tanto se ve "Cargando ferias desde la nube...", aunque Supabase responde en ~0,2 s. En producción el HTML tarda ~0,2 s y el JS pesa ~0,6 MB comprimido.
-- **Probar la velocidad real en local:** `npx expo export -p web` (arma el sitio en `dist/`, como Vercel) y después `npx expo serve` (normalmente en `http://localhost:8081`).
+- **Probar la velocidad real en local:** `npm run build` (arma el sitio en `dist/`, igual que Vercel) y después `npx expo serve` (normalmente en `http://localhost:8081`).
 - **Instalar paquetes:** siempre `npx expo install <paquete>` (no `npm install <paquete>`), para que elija versiones compatibles con el SDK.
 - **Publicar a producción (Vercel):**
   ```bash
@@ -111,6 +115,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - Limpieza del template de Expo (2026-11-20): se borraron la página `/explore`, los componentes, hooks, imágenes y script de ejemplo, la animación de carga con el logo de Expo, y los paquetes sin uso (`react-native-maps`, `expo-symbols`, `expo-glass-effect`, `@expo/ui`, `expo-device`, `expo-web-browser`). README nuevo en español.
 
 - Título, descripción e idioma del sitio (2026-11-20) en `src/app/+html.tsx`. Por ahora todas las páginas, fichas incluidas, comparten el mismo título; falta una imagen para `og:image` (cuando haya logo).
+
+- Sitemap, robots.txt y página 404 propia (2026-11-20). Ver sección 2, Hosting.
 
 **Próximo**
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
