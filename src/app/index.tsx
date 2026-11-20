@@ -612,6 +612,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDF2F7',
     borderRadius: 10,
     padding: 4,
+    // En el celu ocupa todo el ancho; en pantallas grandes se queda en 360px, centrada
+    width: '100%',
+    maxWidth: 360,
+    alignSelf: 'center',
   },
   botonSelector: {
     flex: 1,
