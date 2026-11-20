@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -389,15 +389,22 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={styles.headerTitulo}>
-            <Text style={styles.tituloApp}>¡ESTO ES DE UNA FERIA!</Text>
-            <Text style={styles.subtitulo}>Encontrá ferias americanas cerca tuyo</Text>
+            <Text style={styles.tituloApp}>Esto es de una feria</Text>
+            <Text style={styles.lema}>• Todos tienen derecho a vestirse increíble •</Text>
+            <Text style={styles.subtitulo}>
+              🪞Guía de ferias americanas por{' '}
+              {/* En la web es un <a> de verdad; en el celu abre Instagram */}
+              <Link href="https://instagram.com/estoesdeunaferia" target="_blank" style={styles.linkInstagram}>
+                @estoesdeunaferia
+              </Link>
+            </Text>
           </View>
           <TouchableOpacity 
             style={[styles.botonFiltroToggle, styles.botonFiltroHeader, totalFiltrosActivos > 0 && styles.botonFiltroActivo]}
             onPress={() => setMostrarFiltros(!mostrarFiltros)}
           >
             <Text style={[styles.textoBotonFiltro, totalFiltrosActivos > 0 && styles.textoBotonFiltroActivo]}>
-              🔍 Filtros {totalFiltrosActivos > 0 ? `(${totalFiltrosActivos})` : ''}
+              🔍 Filtrar ferias{totalFiltrosActivos > 0 ? ` (${totalFiltrosActivos})` : ''} {mostrarFiltros ? '▴' : '▾'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -531,28 +538,42 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     textAlign: 'center',
   },
+  lema: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    color: '#4A5568',
+    marginTop: 4,
+    textAlign: 'center',
+  },
   subtitulo: {
     fontSize: 12,
     color: '#7F8C8D',
-    marginTop: 2,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  linkInstagram: {
+    color: '#3182CE',
+    fontWeight: '600',
   },
   botonFiltroToggle: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#EDF2F7',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    backgroundColor: '#EBF8FF',
+    borderWidth: 1.5,
+    borderColor: '#3182CE',
   },
   botonFiltroHeader: {
-    alignSelf: 'flex-end',
-    marginTop: 10,
+    alignSelf: 'center',
+    marginTop: 14,
   },
   botonFiltroActivo: {
     backgroundColor: '#3182CE',
   },
   textoBotonFiltro: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4A5568',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2B6CB0',
   },
   textoBotonFiltroActivo: {
     color: '#FFFFFF',
