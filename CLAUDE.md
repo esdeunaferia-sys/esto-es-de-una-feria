@@ -46,7 +46,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 - `src/global.css`: fuentes y la grilla tipo Pinterest de la web (`#feria-masonry`).
 - `src/app/+not-found.tsx`: página "No encontramos esta página" (con botón a la home) para cualquier dirección que no existe. Se publica como `404.html`.
 - `src/app/+html.tsx`: HTML base de todas las páginas web (solo corre al armar el sitio, en Node). Tiene `lang="es-AR"`, el título y la descripción generales del sitio, las etiquetas `og:` para la vista previa al compartir y `theme-color`. Usa `useServerDocumentContext()` (ya es la forma del SDK 58).
-- `src/app/_layout.tsx`: layout raíz (Stack sin header, tema claro/oscuro, splash, Firebase).
+- `src/app/_layout.tsx`: layout raíz (Stack sin header, siempre tema claro, Firebase).
 - `src/app/index.tsx`: **home** (~750 líneas): carga de ferias, filtros, lista/grilla y mapa.
 - `src/components/filtro-chips.tsx`: grupo de chips de filtro con título y selección múltiple (lo usan todos los filtros de la home).
 - `src/app/feria/[slug].tsx`: ficha de una feria (`/feria/<slug>`). Busca la feria en Supabase por `slug` (solo `activa = true`). `generateStaticParams` pide los slugs en el build y genera un HTML por feria.
@@ -64,6 +64,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 ---
 
 ## 5. Arquitectura Visual y Diseño UI/UX
+- **Solo modo claro:** `app.json` tiene `userInterfaceStyle: "light"`, el layout usa siempre `DefaultTheme` y `+html.tsx` tiene `<meta name="color-scheme" content="light">`. Todas las pantallas tienen colores fijos pensados para fondo claro; un modo oscuro de verdad sería un trabajo aparte.
 - **Fondo general de la home:** `#F5F5F7`. Header blanco.
 - **Encabezado de la home:** título "Esto es de / una feria" en dos renglones (más adelante va un logo), el lema "• Todos tienen derecho a vestirse increíble •" y "🪞Guía de ferias americanas por @estoesdeunaferia" (link a Instagram). Además, el link "¡Sumá tu feria!" (Google Form) y el botón "🔍 Filtrar ferias ▾". En el celu va todo centrado en columna: título, Sumá tu feria, filtros. En la web desde 768px, `src/global.css` (con los `nativeID` `encabezado*`) lo pasa a una fila: filtros a la izquierda, título al medio, Sumá tu feria a la derecha. Debajo, la botonera Lista/Mapa con `maxWidth: 360`, centrada. En la vista **Lista** todo el encabezado se scrollea junto con las cards (en la web va adentro del `ScrollView`; en el celu es el `ListHeaderComponent` de la `FlatList`), para que en el celu no ocupe media pantalla. En la vista **Mapa** queda fijo arriba, y el panel de filtros tiene `maxHeight: 360` con scroll propio. El pull-to-refresh del celu usa su propio estado (`refrescando`), separado de `loading`.
 - **Grilla:** en web, columnas CSS por ancho de pantalla (1 / 2 desde 560px / 3 desde 900px / 4 desde 1280px), en `src/global.css`. En el celu, `FlatList` de una columna con pull-to-refresh.

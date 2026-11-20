@@ -35,6 +35,8 @@ export default function Root({ children }: PropsWithChildren) {
 
         {/* Color de la barra del navegador en el celu (mismo blanco que el encabezado) */}
         <meta name="theme-color" content="#FFFFFF" />
+        {/* El sitio está diseñado solo en claro: que el navegador no oscurezca nada solo */}
+        <meta name="color-scheme" content="light" />
 
         {/* Estilos que necesita React Native Web para ocupar toda la pantalla */}
         <ScrollViewStyleReset />
