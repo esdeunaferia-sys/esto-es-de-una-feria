@@ -65,7 +65,6 @@ export default function HomeScreen() {
   const [precioFiltro, setPrecioFiltro] = useState<string>('');
   const [diaFiltro, setDiaFiltro] = useState<string>('');
   const [tipoFiltro, setTipoFiltro] = useState<string>('');
-  const [generoFiltro, setGeneroFiltro] = useState<string>('');
   const [modalidadFiltro, setModalidadFiltro] = useState<string>('');
   const [compraRopaFiltro, setCompraRopaFiltro] = useState<boolean | null>(null);
 
@@ -116,11 +115,6 @@ export default function HomeScreen() {
     return Array.from(new Set(tipos));
   }, [ferias]);
 
-  const opcionesGeneros = useMemo(() => {
-    const generos = ferias.flatMap(f => f.genero || []).filter(Boolean);
-    return Array.from(new Set(generos));
-  }, [ferias]);
-
   // Filtrado de ferias
   const feriasFiltradas = useMemo(() => {
     return ferias.filter(f => {
@@ -129,19 +123,17 @@ export default function HomeScreen() {
       if (modalidadFiltro && (!f.modalidad || !f.modalidad.includes(modalidadFiltro))) return false;
       if (diaFiltro && (!f.dias_semana || !f.dias_semana.includes(diaFiltro.toLowerCase()))) return false;
       if (tipoFiltro && (!f.tipo || !f.tipo.includes(tipoFiltro))) return false;
-      if (generoFiltro && (!f.genero || !f.genero.includes(generoFiltro))) return false;
       if (compraRopaFiltro !== null && f.compra_ropa !== compraRopaFiltro) return false;
       return true;
     });
-  }, [ferias, barrioFiltro, precioFiltro, diaFiltro, tipoFiltro, generoFiltro, modalidadFiltro, compraRopaFiltro]);
+  }, [ferias, barrioFiltro, precioFiltro, diaFiltro, tipoFiltro, modalidadFiltro, compraRopaFiltro]);
 
   const totalFiltrosActivos = [
     barrioFiltro, 
     precioFiltro, 
     diaFiltro, 
-    tipoFiltro, 
-    generoFiltro, 
-    modalidadFiltro, 
+    tipoFiltro,
+    modalidadFiltro,
     compraRopaFiltro !== null ? 'compraRopa' : ''
   ].filter(Boolean).length;
 
@@ -150,7 +142,6 @@ export default function HomeScreen() {
     setPrecioFiltro('');
     setDiaFiltro('');
     setTipoFiltro('');
-    setGeneroFiltro('');
     setModalidadFiltro('');
     setCompraRopaFiltro(null);
   };
@@ -317,9 +308,6 @@ export default function HomeScreen() {
         <View style={styles.tagsContainer}>
           {(item.tipo || []).map((tipo, index) => (
             <View key={`${tipo}-${index}`} style={styles.tag}><Text style={styles.tagText}>{tipo}</Text></View>
-          ))}
-          {(item.genero || []).map((genero, index) => (
-            <View key={`${genero}-${index}`} style={styles.tag}><Text style={styles.tagText}>{genero}</Text></View>
           ))}
         </View>
 
@@ -502,29 +490,6 @@ export default function HomeScreen() {
               </>
             )}
 
-            {/* Filtro: Género */}
-            {opcionesGeneros.length > 0 && (
-              <>
-                <Text style={styles.labelFiltro}>👤 Género</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
-                  <TouchableOpacity 
-                    style={[styles.chip, generoFiltro === '' && styles.chipSeleccionado]}
-                    onPress={() => setGeneroFiltro('')}
-                  >
-                    <Text style={[styles.chipTexto, generoFiltro === '' && styles.chipTextoSeleccionado]}>Todos</Text>
-                  </TouchableOpacity>
-                  {opcionesGeneros.map(genero => (
-                    <TouchableOpacity 
-                      key={genero} 
-                      style={[styles.chip, generoFiltro === genero && styles.chipSeleccionado]}
-                      onPress={() => setGeneroFiltro(generoFiltro === genero ? '' : genero)}
-                    >
-                      <Text style={[styles.chipTexto, generoFiltro === genero && styles.chipTextoSeleccionado]}>{genero}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </>
-            )}
           </ScrollView>
         )}
 

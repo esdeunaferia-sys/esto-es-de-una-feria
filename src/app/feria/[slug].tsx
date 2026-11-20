@@ -114,7 +114,7 @@ export default function FeriaScreen() {
   const dias = (feria.dias_semana ?? []).join(', ');
   const diasYHorario = [dias, feria.horario].filter(Boolean).join(' • ');
   const precio = (feria.precio ?? []).join(' ');
-  const etiquetas = [...(feria.tipo ?? []), ...(feria.genero ?? [])];
+  const etiquetas = feria.tipo ?? [];
 
   const abrirInstagram = () => {
     if (feria.instagram) {

@@ -50,8 +50,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 
 ## 4. Datos (Supabase)
 - Tabla **`ferias`**. La home trae `select('*')` filtrando `activa = true`, ordenando por `orden` (ascendente, orden manual 1, 2, 3…) y después por `created_at` (descendente).
-- Campos que usa la app: `id`, `slug`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `modalidad[]`, `precio[]`, `genero[]`, `tipo[]`, `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean), `orden`, `activa`, `created_at`, `tamano` (enum `tamano_feria`: `normal` | `grande`, por defecto `normal`; en el Table Editor aparece como desplegable).
-- Valores fijos en los filtros: precios `$`…`$$$$$`; días en minúscula y **sin tilde** (`miercoles`, `sabado`); modalidades `Fija / Local`, `Showroom fijo`, `Itinerante`. Barrios, tipos y géneros salen de los datos.
+- Campos que usa la app: `id`, `slug`, `nombre`, `foto_perfil`, `fotos[]`, `barrio`, `direccion`, `dias_semana[]`, `horario`, `observaciones_dias`, `modalidad[]`, `precio[]`, `tipo[]` (también incluye a quién va dirigida: "mujer", "hombre", "unisex"; ya no existe `genero`), `instagram`, `whatsapp`, `lat`, `lng`, `compra_ropa` (boolean), `orden`, `activa`, `created_at`, `tamano` (enum `tamano_feria`: `normal` | `grande`, por defecto `normal`; en el Table Editor aparece como desplegable).
+- Valores fijos en los filtros: precios `$`…`$$$$$`; días en minúscula y **sin tilde** (`miercoles`, `sabado`); modalidades `Fija / Local`, `Showroom fijo`, `Itinerante`. Barrios y tipos salen de los datos.
 
 ---
 
@@ -63,9 +63,9 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
   1. **Imagen superior:** 100% de ancho, alto fijo de 160px (**320px** si la feria tiene `tamano = 'grande'`, para destacarla; el nombre también pasa de 18 a 22). Mismo ancho que las demás, para no romper la grilla tipo Pinterest. Sin badge de "Destacada": por decisión de producto, se distingue solo por el tamaño.
   2. **Cabecera:** nombre en negrita + badges ("🛍️ Compra ropa" y modalidad).
   3. **Metadatos con íconos:** dirección (barrio), días • horario, precios.
-  4. **Tags:** chips grises con tipo y género.
+  4. **Tags:** chips grises con los tipos.
   5. **Pie de contacto:** Instagram a la izquierda, WhatsApp a la derecha.
-- **Ficha de feria (`/feria/[slug]`):** fondo `#F5F5F7`, columna centrada con `maxWidth: 720`. Arriba "← Volver" en texto azul. Foto principal 4:3 con radio 12 y miniaturas (portada + galería). Tarjeta blanca con la misma sombra que las cards: nombre, badges, datos con íconos, `observaciones_dias` y chips de tipo/género. Botones de Instagram y WhatsApp lado a lado.
+- **Ficha de feria (`/feria/[slug]`):** fondo `#F5F5F7`, columna centrada con `maxWidth: 720`. Arriba "← Volver" en texto azul. Foto principal 4:3 con radio 12 y miniaturas (portada + galería). Tarjeta blanca con la misma sombra que las cards: nombre, badges, datos con íconos, `observaciones_dias` y chips de tipo. Botones de Instagram y WhatsApp lado a lado.
 - **Fotos:** se suben a Supabase Storage (bucket `fotos-feria`) **en WebP, máx. 1200px de ancho, calidad ~75** (100–200 KB). Nombre: `<slug>-<n>.webp`, donde 1 = portada. Nunca subir fotos en PNG: pesan 5 a 10 veces más.
 - Paleta actual: azul `#3182CE` para acciones/chips activos, grises tipo Tailwind (`#2D3748`, `#4A5568`, `#718096`, `#E2E8F0`).
 
@@ -107,7 +107,7 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.
 
 **Pendientes detectados (sin prioridad todavía)**
-- Separar `index.tsx`: componente reutilizable de chips de filtro (hoy está copiado 6 veces), carga de datos en un hook.
+- Separar `index.tsx`: componente reutilizable de chips de filtro (hoy está copiado 5 veces), carga de datos en un hook.
 - Limpiar restos del template y personalizar nombre, ícono y splash en `app.json`.
 
 ---

@@ -13,7 +13,6 @@ export type Feria = {
   observaciones_dias: string | null;
   modalidad: string[] | null;
   precio: string[] | null;
-  genero: string[] | null;
   tipo: string[] | null;
   instagram: string | null;
   whatsapp: string | null;
