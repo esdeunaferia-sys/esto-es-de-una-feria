@@ -86,6 +86,7 @@ export default function HomeScreen() {
   const iframeMapaRef = useRef<HTMLIFrameElement>(null);
   const [ferias, setFerias] = useState<Feria[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refrescando, setRefrescando] = useState(false); // deslizar para refrescar (celu)
   // La vista (lista o mapa) se guarda en la URL (/?vista=mapa). Así, al volver
   // de una ficha, al recargar o al compartir el link, se mantiene la vista elegida.
   const { vista } = useLocalSearchParams<{ vista?: string }>();
@@ -130,10 +131,10 @@ export default function HomeScreen() {
 
   // Deslizar hacia abajo para refrescar (solo en el celu)
   const refrescarFerias = async () => {
-    setLoading(true);
+    setRefrescando(true);
     const lista = await pedirFerias();
     if (lista) setFerias(lista); // si falló, dejamos las que ya estaban
-    setLoading(false);
+    setRefrescando(false);
   };
 
   // Opciones de barrio, tipo y modalidad: salen de los datos, sin repetir y en orden alfabético
@@ -372,144 +373,165 @@ export default function HomeScreen() {
     </View>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        {/* Encabezado. En el celu va todo centrado y en columna: título, "Sumá tu
-            feria" y filtros. En la compu (web, desde 768px) src/global.css lo pasa a
-            una fila: filtros a la izquierda, título al medio y "Sumá tu feria" a la
-            derecha. Los nativeID son los que usa ese CSS. */}
-        <View style={styles.headerTop} nativeID="encabezado">
-          <View style={styles.headerTitulo} nativeID="encabezado-titulo">
-            <Text style={styles.tituloApp}>{'Esto es de\nuna feria'}</Text>
-            <Text style={styles.lema}>• Todos tienen derecho a vestirse increíble •</Text>
-            <Text style={styles.subtitulo}>
-              🪞Guía de ferias americanas por{' '}
-              {/* En la web es un <a> de verdad; en el celu abre Instagram */}
-              <Link href="https://instagram.com/estoesdeunaferia" target="_blank" style={styles.linkInstagram}>
-                @estoesdeunaferia
-              </Link>
-            </Text>
-          </View>
-
-          <View style={styles.encabezadoSumar} nativeID="encabezado-sumar">
-            <Link href="https://forms.gle/hrpUULd6UGmay2JC9" target="_blank" style={styles.linkSumarFeria}>
-              ¡Sumá tu feria!
+  // Encabezado: título, Sumá tu feria, filtros y Lista/Mapa. En la vista Lista va
+  // adentro de lo que se scrollea (así en el celu no ocupa media pantalla todo el
+  // tiempo); en la vista Mapa queda fijo arriba, porque el mapa no se scrollea.
+  const encabezado = (
+    <View style={styles.header}>
+      {/* Encabezado. En el celu va todo centrado y en columna: título, "Sumá tu
+          feria" y filtros. En la compu (web, desde 768px) src/global.css lo pasa a
+          una fila: filtros a la izquierda, título al medio y "Sumá tu feria" a la
+          derecha. Los nativeID son los que usa ese CSS. */}
+      <View style={styles.headerTop} nativeID="encabezado">
+        <View style={styles.headerTitulo} nativeID="encabezado-titulo">
+          <Text style={styles.tituloApp}>{'Esto es de\nuna feria'}</Text>
+          <Text style={styles.lema}>• Todos tienen derecho a vestirse increíble •</Text>
+          <Text style={styles.subtitulo}>
+            🪞Guía de ferias americanas por{' '}
+            {/* En la web es un <a> de verdad; en el celu abre Instagram */}
+            <Link href="https://instagram.com/estoesdeunaferia" target="_blank" style={styles.linkInstagram}>
+              @estoesdeunaferia
             </Link>
-          </View>
-
-          <View style={styles.encabezadoFiltros} nativeID="encabezado-filtros">
-            <TouchableOpacity
-              style={[styles.botonFiltroToggle, totalFiltrosActivos > 0 && styles.botonFiltroActivo]}
-              onPress={() => setMostrarFiltros(!mostrarFiltros)}
-            >
-              <Text style={[styles.textoBotonFiltro, totalFiltrosActivos > 0 && styles.textoBotonFiltroActivo]}>
-                🔍 Filtrar ferias{totalFiltrosActivos > 0 ? ` (${totalFiltrosActivos})` : ''} {mostrarFiltros ? '▴' : '▾'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </Text>
         </View>
 
-        {/* Panel Desplegable de Filtros */}
-        {mostrarFiltros && (
-          <ScrollView style={styles.panelFiltros} nestedScrollEnabled>
-            <View style={styles.headerFiltros}>
-              <Text style={styles.tituloFiltros}>
-                Filtrar ferias{' '}
-                <Text style={styles.contadorFiltros}>
-                  · {feriasFiltradas.length} {feriasFiltradas.length === 1 ? 'feria' : 'ferias'}
-                </Text>
-              </Text>
-              {totalFiltrosActivos > 0 && (
-                <TouchableOpacity onPress={limpiarFiltros}>
-                  <Text style={styles.textoLimpiar}>Limpiar todos</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+        <View style={styles.encabezadoSumar} nativeID="encabezado-sumar">
+          <Link href="https://forms.gle/hrpUULd6UGmay2JC9" target="_blank" style={styles.linkSumarFeria}>
+            ¡Sumá tu feria!
+          </Link>
+        </View>
 
-            <FiltroChips titulo="🗓️ Día" opciones={DIAS_SEMANA} seleccionados={diasFiltro} onCambiar={setDiasFiltro} />
-            <FiltroChips titulo="📍 Barrio" opciones={opcionesBarrios} seleccionados={barriosFiltro} onCambiar={setBarriosFiltro} />
-            <FiltroChips titulo="🏷️ Precio" opciones={OPCIONES_PRECIOS} seleccionados={preciosFiltro} onCambiar={setPreciosFiltro} />
-            <FiltroChips titulo="🎨 Estilo / Tipo" opciones={opcionesTipos} seleccionados={tiposFiltro} onCambiar={setTiposFiltro} />
-            <FiltroChips titulo="🏢 Modalidad" opciones={opcionesModalidades} seleccionados={modalidadesFiltro} onCambiar={setModalidadesFiltro} />
-            <FiltroChips titulo="✨ Extras" opciones={OPCIONES_EXTRAS} seleccionados={extrasFiltro} onCambiar={setExtrasFiltro} />
-          </ScrollView>
-        )}
-
-        {/* Selector de Vista (Lista / Mapa) */}
-        <View style={styles.selectorContainer}>
-          <TouchableOpacity 
-            style={[styles.botonSelector, vistaActual === 'lista' && styles.botonActivo]}
-            onPress={() => setVistaActual('lista')}
+        <View style={styles.encabezadoFiltros} nativeID="encabezado-filtros">
+          <TouchableOpacity
+            style={[styles.botonFiltroToggle, totalFiltrosActivos > 0 && styles.botonFiltroActivo]}
+            onPress={() => setMostrarFiltros(!mostrarFiltros)}
           >
-            <Text style={[styles.textoSelector, vistaActual === 'lista' && styles.textoActivo]}>
-              📋 Lista ({feriasFiltradas.length})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.botonSelector, vistaActual === 'mapa' && styles.botonActivo]}
-            onPress={() => setVistaActual('mapa')}
-          >
-            <Text style={[styles.textoSelector, vistaActual === 'mapa' && styles.textoActivo]}>
-              🗺️ Mapa
+            <Text style={[styles.textoBotonFiltro, totalFiltrosActivos > 0 && styles.textoBotonFiltroActivo]}>
+              🔍 Filtrar ferias{totalFiltrosActivos > 0 ? ` (${totalFiltrosActivos})` : ''} {mostrarFiltros ? '▴' : '▾'}
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Loader mientras carga Supabase */}
+      {/* Panel Desplegable de Filtros */}
+      {mostrarFiltros && (
+        <ScrollView
+          style={[styles.panelFiltros, vistaActual === 'mapa' && styles.panelFiltrosMapa]}
+          nestedScrollEnabled
+        >
+          <View style={styles.headerFiltros}>
+            <Text style={styles.tituloFiltros}>
+              Filtrar ferias{' '}
+              <Text style={styles.contadorFiltros}>
+                · {feriasFiltradas.length} {feriasFiltradas.length === 1 ? 'feria' : 'ferias'}
+              </Text>
+            </Text>
+            {totalFiltrosActivos > 0 && (
+              <TouchableOpacity onPress={limpiarFiltros}>
+                <Text style={styles.textoLimpiar}>Limpiar todos</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <FiltroChips titulo="🗓️ Día" opciones={DIAS_SEMANA} seleccionados={diasFiltro} onCambiar={setDiasFiltro} />
+          <FiltroChips titulo="📍 Barrio" opciones={opcionesBarrios} seleccionados={barriosFiltro} onCambiar={setBarriosFiltro} />
+          <FiltroChips titulo="🏷️ Precio" opciones={OPCIONES_PRECIOS} seleccionados={preciosFiltro} onCambiar={setPreciosFiltro} />
+          <FiltroChips titulo="🎨 Estilo / Tipo" opciones={opcionesTipos} seleccionados={tiposFiltro} onCambiar={setTiposFiltro} />
+          <FiltroChips titulo="🏢 Modalidad" opciones={opcionesModalidades} seleccionados={modalidadesFiltro} onCambiar={setModalidadesFiltro} />
+          <FiltroChips titulo="✨ Extras" opciones={OPCIONES_EXTRAS} seleccionados={extrasFiltro} onCambiar={setExtrasFiltro} />
+        </ScrollView>
+      )}
+
+      {/* Selector de Vista (Lista / Mapa) */}
+      <View style={styles.selectorContainer}>
+        <TouchableOpacity 
+          style={[styles.botonSelector, vistaActual === 'lista' && styles.botonActivo]}
+          onPress={() => setVistaActual('lista')}
+        >
+          <Text style={[styles.textoSelector, vistaActual === 'lista' && styles.textoActivo]}>
+            📋 Lista ({feriasFiltradas.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.botonSelector, vistaActual === 'mapa' && styles.botonActivo]}
+          onPress={() => setVistaActual('mapa')}
+        >
+          <Text style={[styles.textoSelector, vistaActual === 'mapa' && styles.textoActivo]}>
+            🗺️ Mapa
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3182CE" />
-          <Text style={styles.loadingTexto}>Cargando ferias desde la nube...</Text>
-        </View>
+        // Mientras carga Supabase
+        <>
+          {encabezado}
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#3182CE" />
+            <Text style={styles.loadingTexto}>Cargando ferias desde la nube...</Text>
+          </View>
+        </>
       ) : vistaActual === 'lista' ? (
         Platform.OS === 'web' ? (
-          <ScrollView contentContainerStyle={styles.listaContainer}>
-            {feriasFiltradas.length === 0 ? (
-              emptyList
-            ) : (
-              <View style={styles.listaWeb} nativeID="feria-masonry">
-                {feriasFiltradas.map(renderCard)}
-              </View>
-            )}
+          <ScrollView>
+            {encabezado}
+            <View style={styles.listaContainer}>
+              {feriasFiltradas.length === 0 ? (
+                emptyList
+              ) : (
+                <View style={styles.listaWeb} nativeID="feria-masonry">
+                  {feriasFiltradas.map(renderCard)}
+                </View>
+              )}
+            </View>
           </ScrollView>
         ) : (
           <FlatList
             data={feriasFiltradas}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listaContainer}
+            ListHeaderComponent={encabezado}
+            ListHeaderComponentStyle={styles.encabezadoLista}
+            contentContainerStyle={styles.listaNativa}
             onRefresh={refrescarFerias}
-            refreshing={loading}
+            refreshing={refrescando}
             ListEmptyComponent={emptyList}
-            renderItem={({ item }) => renderCard(item)}
+            renderItem={({ item }) => <View style={styles.itemLista}>{renderCard(item)}</View>}
           />
         )
-      ) : Platform.OS === 'web' ? (
-        <iframe
-          ref={iframeMapaRef}
-          srcDoc={mapHtml}
-          style={{ width: '100%', height: '100%', border: 'none' }}
-          title="Mapa de Ferias"
-        />
       ) : (
-        <WebView
-          key={JSON.stringify(feriasConCoordenadas.map(f => f.id))}
-          originWhitelist={['*']}
-          source={{ html: mapHtml }}
-          style={styles.mapa}
-          onMessage={(evento) => {
-            // En el celu el mensaje llega como texto: lo convertimos de vuelta
-            try {
-              const slug = slugDelMensajeDelMapa(JSON.parse(evento.nativeEvent.data));
-              if (slug) router.push({ pathname: '/feria/[slug]', params: { slug } });
-            } catch {
-              // mensaje que no es JSON: lo ignoramos
-            }
-          }}
-        />
+        // Vista Mapa: encabezado fijo arriba y el mapa ocupa el resto
+        <>
+          {encabezado}
+          {Platform.OS === 'web' ? (
+            <iframe
+              ref={iframeMapaRef}
+              srcDoc={mapHtml}
+              style={{ width: '100%', height: '100%', border: 'none' }}
+              title="Mapa de Ferias"
+            />
+          ) : (
+            <WebView
+              key={JSON.stringify(feriasConCoordenadas.map(f => f.id))}
+              originWhitelist={['*']}
+              source={{ html: mapHtml }}
+              style={styles.mapa}
+              onMessage={(evento) => {
+                // En el celu el mensaje llega como texto: lo convertimos de vuelta
+                try {
+                  const slug = slugDelMensajeDelMapa(JSON.parse(evento.nativeEvent.data));
+                  if (slug) router.push({ pathname: '/feria/[slug]', params: { slug } });
+                } catch {
+                  // mensaje que no es JSON: lo ignoramos
+                }
+              }}
+            />
+          )}
+        </>
       )}
     </SafeAreaView>
   );
@@ -591,13 +613,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   panelFiltros: {
-    maxHeight: 360,
     backgroundColor: '#F8FAFC',
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+  },
+  // En el Mapa el encabezado no se scrollea: el panel se limita y se scrollea por dentro
+  panelFiltrosMapa: {
+    maxHeight: 360,
   },
   headerFiltros: {
     flexDirection: 'row',
@@ -659,6 +684,16 @@ const styles = StyleSheet.create({
   },
   listaContainer: {
     padding: 16,
+  },
+  // Celu: el encabezado ocupa todo el ancho y las cards llevan margen a los costados
+  encabezadoLista: {
+    marginBottom: 16,
+  },
+  listaNativa: {
+    paddingBottom: 16,
+  },
+  itemLista: {
+    paddingHorizontal: 16,
   },
   listaWeb: {
     width: '100%',
