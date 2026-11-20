@@ -63,6 +63,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
   3. **Metadatos con íconos:** dirección (barrio), días • horario, precios.
   4. **Tags:** chips grises con tipo y género.
   5. **Pie de contacto:** Instagram a la izquierda, WhatsApp a la derecha.
+- **Ficha de feria (`/feria/[slug]`):** fondo `#F5F5F7`, columna centrada con `maxWidth: 720`. Arriba "← Volver" en texto azul. Foto principal 4:3 con radio 12 y miniaturas (portada + galería). Tarjeta blanca con la misma sombra que las cards: nombre, badges, datos con íconos, `observaciones_dias` y chips de tipo/género. Botones de Instagram y WhatsApp lado a lado.
+- **Fotos:** se suben a Supabase Storage (bucket `fotos-feria`) **en WebP, máx. 1200px de ancho, calidad ~75** (100–200 KB). Nombre: `<slug>-<n>.webp`, donde 1 = portada. Nunca subir fotos en PNG: pesan 5 a 10 veces más.
 - Paleta actual: azul `#3182CE` para acciones/chips activos, grises tipo Tailwind (`#2D3748`, `#4A5568`, `#718096`, `#E2E8F0`).
 
 ---
@@ -91,6 +93,8 @@ Raíz: `C:\Users\Brian\esto-es-de-una-feria\` (Windows 11, Node v22, npm 10).
 
 - Redeploy automático (2026-11-19): las páginas de feria solo existen para los slugs que había al momento del build. Por eso hay un *Database Webhook* en Supabase (`rearmar_sitio_vercel`, tabla `ferias`, Insert/Update/Delete, POST) que llama a un *Deploy Hook* de Vercel (`supabase-ferias`, rama `main`). Cualquier cambio en la tabla rearma el sitio en ~2 minutos. La URL del hook es secreta: vive solo en Supabase, nunca en el repo. Al cargar una feria a mano, completar `slug`.
 - ESLint configurado (`eslint.config.js`, `eslint-config-expo`) y sin errores (2026-11-19). Ojo con la regla `react-hooks/set-state-in-effect`: dentro de un `useEffect` no llamar funciones que cambian el estado antes de un `await`. Patrón usado: una función que solo trae datos (`pedirFerias()` en `index.tsx`) y el `setState` dentro del `.then(...)`.
+- Fotos comprimidas (2026-11-20): las 19 fotos pasaron de PNG/JPG a WebP (de 6,3 MB a 0,9 MB). Las originales siguen en Storage como respaldo: borrarlas cuando se confirme que todo anda bien. Algunas originales son chicas (ej. Monogatari galería 322×441, Misericordia 442×342) y conviene reemplazarlas por versiones más grandes.
+- Rediseño de la ficha (2026-11-20): columna centrada de 720px, ver sección 5.
 
 **Próximo**
 1. **Título y meta tags por feria (SEO y vista previa al compartir):** dejarlo para cuando se actualice a Expo SDK 58, donde los *data loaders* son estables y se usa `generateMetadata()`. En SDK 57 son experimentales (`unstable_useServerDataLoaders`) y `<Head>` cambia en 58.

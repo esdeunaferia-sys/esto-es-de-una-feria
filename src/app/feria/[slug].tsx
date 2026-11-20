@@ -79,12 +79,6 @@ export default function FeriaScreen() {
     }
   };
 
-  const botonVolver = (
-    <TouchableOpacity style={styles.botonVolver} onPress={volver}>
-      <Text style={styles.textoVolver}>← Volver</Text>
-    </TouchableOpacity>
-  );
-
   if (estado === 'cargando') {
     return (
       <SafeAreaView style={[styles.container, styles.centrado]}>
@@ -111,13 +105,16 @@ export default function FeriaScreen() {
     );
   }
 
-  const fotos = feria.fotos ?? [];
-  const fotoActiva = fotoElegida ?? feria.foto_perfil ?? fotos[0] ?? null;
-  const modalidad = (feria.modalidad ?? []).join(', ');
+  // Portada + galería en una sola lista (sin repetidas), para poder volver a la portada
+  const todasLasFotos = [
+    ...new Set([feria.foto_perfil, ...(feria.fotos ?? [])].filter((f): f is string => !!f)),
+  ];
+  const fotoActiva = fotoElegida ?? todasLasFotos[0] ?? null;
+
   const dias = (feria.dias_semana ?? []).join(', ');
-  const precio = (feria.precio ?? []).join(', ');
-  const tipo = (feria.tipo ?? []).join(', ');
-  const genero = (feria.genero ?? []).join(', ');
+  const diasYHorario = [dias, feria.horario].filter(Boolean).join(' • ');
+  const precio = (feria.precio ?? []).join(' ');
+  const etiquetas = [...(feria.tipo ?? []), ...(feria.genero ?? [])];
 
   const abrirInstagram = () => {
     if (feria.instagram) {
@@ -136,106 +133,111 @@ export default function FeriaScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {botonVolver}
+        {/* Columna centrada con ancho máximo: en la compu no se estira a toda la pantalla */}
+        <View style={styles.columna}>
+          <TouchableOpacity style={styles.botonVolver} onPress={volver}>
+            <Text style={styles.textoVolver}>← Volver</Text>
+          </TouchableOpacity>
 
-        {/* Imagen principal */}
-        {fotoActiva ? (
-          <Image source={{ uri: fotoActiva }} style={styles.imagenPrincipal} />
-        ) : (
-          <View style={[styles.imagenPrincipal, styles.imagenPlaceholder]}>
-            <Text style={{ color: '#A0AEC0' }}>Sin imágenes disponibles</Text>
-          </View>
-        )}
+          {/* Foto principal con proporción fija 4:3 */}
+          {fotoActiva ? (
+            <Image source={{ uri: fotoActiva }} style={styles.fotoPrincipal} resizeMode="cover" />
+          ) : (
+            <View style={[styles.fotoPrincipal, styles.fotoPlaceholder]}>
+              <Text style={{ color: '#A0AEC0' }}>Sin imágenes disponibles</Text>
+            </View>
+          )}
 
-        {/* Miniaturas si hay varias fotos */}
-        {fotos.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carruselMiniaturas}>
-            {fotos.map((imgUrl, index) => (
-              <TouchableOpacity key={index} onPress={() => setFotoElegida(imgUrl)}>
-                <Image
-                  source={{ uri: imgUrl }}
-                  style={[styles.miniatura, fotoActiva === imgUrl && styles.miniaturaSeleccionada]}
-                />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
+          {/* Miniaturas si hay más de una foto */}
+          {todasLasFotos.length > 1 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.miniaturas}
+            >
+              {todasLasFotos.map((url) => (
+                <TouchableOpacity key={url} onPress={() => setFotoElegida(url)}>
+                  <Image
+                    source={{ uri: url }}
+                    style={[styles.miniatura, fotoActiva === url && styles.miniaturaActiva]}
+                  />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
 
-        <View style={styles.infoSection}>
-          <Text style={styles.titulo}>{feria.nombre}</Text>
+          {/* Tarjeta con la información, mismo estilo que las cards de la home */}
+          <View style={styles.tarjeta}>
+            <Text style={styles.titulo}>{feria.nombre}</Text>
 
-          {/* Badges de modalidad y compra de ropa */}
-          <View style={styles.badgesRow}>
-            {modalidad ? (
-              <View style={styles.badgeModalidad}>
-                <Text style={styles.badgeModalidadText}>{modalidad}</Text>
+            {(!!feria.modalidad?.length || feria.compra_ropa === true) && (
+              <View style={styles.badges}>
+                {feria.modalidad && feria.modalidad.length > 0 && (
+                  <View style={styles.badgeModalidad}>
+                    <Text style={styles.badgeModalidadText}>{feria.modalidad.join(' / ')}</Text>
+                  </View>
+                )}
+                {feria.compra_ropa === true && (
+                  <View style={styles.badgeCompraRopa}>
+                    <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
+                  </View>
+                )}
               </View>
-            ) : null}
+            )}
 
-            {feria.compra_ropa === true && (
-              <View style={styles.badgeCompraRopa}>
-                <Text style={styles.badgeCompraRopaText}>🛍️ Compra ropa</Text>
+            <View style={styles.datos}>
+              {feria.direccion ? (
+                <Text style={styles.dato}>
+                  📍 {feria.direccion}
+                  {feria.barrio ? ` (${feria.barrio})` : ''}
+                </Text>
+              ) : null}
+
+              {diasYHorario ? <Text style={styles.dato}>🗓️ {diasYHorario}</Text> : null}
+
+              {feria.observaciones_dias ? (
+                <Text style={styles.observacion}>{feria.observaciones_dias}</Text>
+              ) : null}
+
+              {precio ? <Text style={styles.dato}>🏷️ Precios: {precio}</Text> : null}
+
+              {/* Solo se muestra si el dato está cargado: null = no sabemos */}
+              {feria.compra_ropa !== null ? (
+                <Text style={styles.dato}>
+                  👕 {feria.compra_ropa ? 'Compra o toma ropa usada' : 'No compra ropa usada'}
+                </Text>
+              ) : null}
+            </View>
+
+            {etiquetas.length > 0 && (
+              <View style={styles.etiquetas}>
+                {etiquetas.map((etiqueta, index) => (
+                  <View key={`${etiqueta}-${index}`} style={styles.etiqueta}>
+                    <Text style={styles.etiquetaText}>{etiqueta}</Text>
+                  </View>
+                ))}
               </View>
             )}
           </View>
 
-          {/* Información detallada */}
-          <View style={styles.cardInfo}>
-            <Text style={styles.label}>📍 Ubicación</Text>
-            <Text style={styles.valor}>
-              {feria.direccion}
-              {feria.barrio ? ` (${feria.barrio})` : ''}
-            </Text>
-
-            <Text style={styles.label}>🗓️ Días y Horarios</Text>
-            <Text style={styles.valor}>{[dias, feria.horario].filter(Boolean).join(' • ')}</Text>
-
-            {precio ? (
-              <>
-                <Text style={styles.label}>🏷️ Rango de Precios</Text>
-                <Text style={styles.valor}>{precio}</Text>
-              </>
-            ) : null}
-
-            {/* Solo se muestra si el dato está cargado: null = no sabemos */}
-            {feria.compra_ropa !== null ? (
-              <>
-                <Text style={styles.label}>👕 Compra de Ropa usada</Text>
-                <Text style={styles.valor}>
-                  {feria.compra_ropa ? 'Sí, esta feria compra o toma ropa.' : 'No compra ropa.'}
-                </Text>
-              </>
-            ) : null}
-
-            {tipo ? (
-              <>
-                <Text style={styles.label}>🎨 Estilos / Tipo</Text>
-                <Text style={styles.valor}>{tipo}</Text>
-              </>
-            ) : null}
-
-            {genero ? (
-              <>
-                <Text style={styles.label}>👤 Géneros</Text>
-                <Text style={styles.valor}>{genero}</Text>
-              </>
-            ) : null}
-          </View>
-
-          {/* Botones de contacto */}
+          {/* Botones de contacto, uno al lado del otro */}
           {feria.instagram || feria.whatsapp ? (
-            <View style={styles.contactoSection}>
-              <Text style={styles.subtituloSection}>Contacto Directo</Text>
-
+            <View style={styles.contacto}>
               {feria.instagram ? (
-                <TouchableOpacity style={styles.botonInstagram} onPress={abrirInstagram}>
-                  <Text style={styles.textoBotonContacto}>📸 Abrir Instagram ({feria.instagram})</Text>
+                <TouchableOpacity
+                  style={[styles.botonContacto, styles.botonInstagram]}
+                  onPress={abrirInstagram}
+                >
+                  <Text style={styles.textoBotonContacto}>📸 Instagram</Text>
                 </TouchableOpacity>
               ) : null}
 
               {feria.whatsapp ? (
-                <TouchableOpacity style={styles.botonWhatsapp} onPress={abrirWhatsApp}>
-                  <Text style={styles.textoBotonContacto}>💬 Escribir por WhatsApp ({feria.whatsapp})</Text>
+                <TouchableOpacity
+                  style={[styles.botonContacto, styles.botonWhatsapp]}
+                  onPress={abrirWhatsApp}
+                >
+                  <Text style={styles.textoBotonContacto}>💬 WhatsApp</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -246,10 +248,13 @@ export default function FeriaScreen() {
   );
 }
 
+// Misma sombra que las cards de la home
+const SOMBRA = '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F5F7',
   },
   centrado: {
     justifyContent: 'center',
@@ -281,73 +286,71 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   scrollContent: {
-    paddingBottom: 30,
+    padding: 16,
+    paddingBottom: 40,
+  },
+  columna: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    gap: 16,
   },
   botonVolver: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 3,
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingRight: 12,
   },
   textoVolver: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#2C3E50',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#3182CE',
   },
-  imagenPrincipal: {
-    // '100%' en vez de medir la pantalla: en el build estático no hay pantalla que medir
+  fotoPrincipal: {
     width: '100%',
-    height: 280,
-  },
-  imagenPlaceholder: {
+    aspectRatio: 4 / 3,
+    borderRadius: 12,
     backgroundColor: '#EDF2F7',
+  },
+  fotoPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  carruselMiniaturas: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#F8FAFC',
+  miniaturas: {
+    gap: 8,
   },
   miniatura: {
-    width: 60,
-    height: 60,
+    width: 64,
+    height: 64,
     borderRadius: 8,
-    marginRight: 8,
     borderWidth: 2,
     borderColor: 'transparent',
+    backgroundColor: '#EDF2F7',
   },
-  miniaturaSeleccionada: {
+  miniaturaActiva: {
     borderColor: '#3182CE',
   },
-  infoSection: {
+  tarjeta: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     padding: 20,
+    boxShadow: SOMBRA,
   },
   titulo: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#1A202C',
-    marginBottom: 8,
   },
-  badgesRow: {
+  badges: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
     flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
   },
   badgeModalidad: {
-    backgroundColor: '#E6FFFA',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#B2F5EA',
+    borderRadius: 6,
+    backgroundColor: '#E6FFFA',
   },
   badgeModalidadText: {
     fontSize: 12,
@@ -355,10 +358,10 @@ const styles = StyleSheet.create({
     color: '#234E52',
   },
   badgeCompraRopa: {
-    backgroundColor: '#EBF8FF',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 6,
+    backgroundColor: '#EBF8FF',
     borderWidth: 1,
     borderColor: '#BEE3F8',
   },
@@ -367,51 +370,57 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2B6CB0',
   },
-  cardInfo: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 20,
+  datos: {
+    marginTop: 16,
+    gap: 8,
   },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#718096',
-    marginTop: 8,
-    textTransform: 'uppercase',
-  },
-  valor: {
+  dato: {
     fontSize: 15,
-    fontWeight: '500',
-    color: '#2D3748',
-    marginTop: 2,
+    color: '#4A5568',
+    lineHeight: 22,
   },
-  contactoSection: {
+  observacion: {
+    fontSize: 13,
+    color: '#718096',
+    marginTop: -4,
+    marginLeft: 26,
+  },
+  etiquetas: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 16,
+  },
+  etiqueta: {
+    backgroundColor: '#EDF2F7',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+  },
+  etiquetaText: {
+    fontSize: 12,
+    color: '#4A5568',
+    fontWeight: '600',
+  },
+  contacto: {
+    flexDirection: 'row',
     gap: 10,
   },
-  subtituloSection: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2D3748',
-    marginBottom: 6,
+  botonContacto: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
   },
   botonInstagram: {
     backgroundColor: '#E1306C',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
   },
   botonWhatsapp: {
     backgroundColor: '#25D366',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
   },
   textoBotonContacto: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 15,
   },
 });
